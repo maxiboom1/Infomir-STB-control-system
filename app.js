@@ -11,6 +11,6 @@ app.use("/api",routes);
 // Static server http://localhost:3000/plugin
 app.use(express.static('public')); 
 
-app.listen(appConfig.pluginPort, () => {
+app.listen(appConfig.appPort, () => {
     appProcessor.initialize();
 });
