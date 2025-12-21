@@ -4,16 +4,16 @@ class AppConfig {
     public port = 4000;
 
     // Database Host (on which computer the database exists):
-    public mySqlHost = "localhost";
+    public sqlHost = "localhost";
 
     // Database User
-    public mySqlUser = "root";
+    public sqlUser = "root";
 
     // Database Password: 
-    public mySqlPassword = "";
+    public sqlPassword = "123456";
 
     // Database Name: 
-    public mySqlDatabase = "____"; // Fill in database name
+    public sqlDatabase = "stbControl"; // Fill in database name
 }
 
 const appConfig = new AppConfig();
