@@ -1,11 +1,12 @@
 import sql from "mssql";
-import appConfig from "../4-utils/app-config";
+import appConfig from "../3-utilities/app-config.js";
+import logger from "../3-utilities/logger.js";
 
 const config = {
-  user: appConfig.sqlUser,
-  password: appConfig.sqlPassword,
-  server: appConfig.sqlHost,
-  database: appConfig.sqlDatabase,
+  user: appConfig.sqlServerUser,
+  password: appConfig.sqlServerPassword,
+  server: appConfig.sqlServerHost,
+  database: appConfig.sqlServerDatabase,
   options: {
     encrypt: false, // for Azure users
     trustServerCertificate: true, // change to false for production environments
@@ -15,16 +16,16 @@ const config = {
 const poolPromise = new sql.ConnectionPool(config)
   .connect()
   .then((pool) => {
-    //logger(`[SYSTEM] SQL Client connected to ${config.database} database`);
+    logger(`[SYSTEM] SQL Client connected to ${config.database} database`);
     return pool;
   })
   .catch((err) => {
-    //logger(`[SYSTEM] Error connecting to SQL Server: ${err}`, "red");
+    logger(`[SYSTEM] Error connecting to SQL Server: ${err}`, "red");
     throw err;
   });
 
 // Your execute function:
-async function execute(sql: string, values?: any[]) {
+async function execute(sql, values) {
   try {
     const pool = await poolPromise;
     
@@ -48,7 +49,7 @@ async function execute(sql: string, values?: any[]) {
       return result.recordset;
     }
   } catch (err) {
-    //logger(`Error executing query: ${err}`, "red");
+    logger(`Error executing query: ${err}`, "red");
     throw err;
   }
 }

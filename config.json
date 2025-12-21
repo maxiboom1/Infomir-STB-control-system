@@ -1,0 +1,6 @@
+{
+    "sqlServerHost": "ALEX-LAPTOP\\SQLEXPRESS", 
+    "sqlServerUser": "test",
+    "sqlServerPassword": "1234",
+    "sqlServerDatabase": "mag_control"
+} 

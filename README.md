@@ -48,4 +48,3 @@ Instead:
 ### 6) Versions
 - STB model: Infomir MAG540w3, FW: 220 (description: 2.20.10-540), Hardware version: 18C-P0L-00
 - Andriod network sniffer application that I used: "PCAPdroid" with targed apps - "MAGic Remote".
-
