@@ -55,4 +55,16 @@ Instead:
 ### 0.1
 - Implemented full layered project structure
 - Currently - we can upload pcap with device name, to route handler ==> stbService.addNewStb(device, name), it will use utility to parse pcap and then write it to sql device table
-- In case of duplicated name/ip/blob - sql will throw err with reason - we show it to user. 
+- In case of duplicated name/ip/blob - sql will throw err with reason - we show it to user.
+
+## 0.2
+
+- POC ready project - user can add and control stb's. Added keymap to devices table - since unfortunatelly, each stb generates uniq control set commands. 
+- Learning became a bit more complicated - user must click on those buttons in MagicRemote app - in this sequence:
+    ```
+        "1","2","3","4","5","6","7","8","9","0",
+        "CH_PLUS","CH_MINUS",
+        "UP","RIGHT","DOWN","LEFT",
+        "OK","RETURN","HOME","MENU"
+    ```
+This part is annoing - but we cant bypass it.
