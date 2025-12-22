@@ -68,3 +68,8 @@ Instead:
         "OK","RETURN","HOME","MENU"
     ```
 This part is annoing - but we cant bypass it.
+
+
+## 0.3
+
+- New modern responsive ui including all buttons.

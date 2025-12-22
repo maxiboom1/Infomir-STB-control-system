@@ -2,35 +2,95 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MAG 540 Remote POC</title>
   <link rel="stylesheet" href="assets/index.css">
 </head>
 <body>
-  <h1>MAG 540 Remote POC</h1>
+  <header class="header">
+    <h1>MAG 540 Remote POC</h1>
+    <p class="subtitle">Pick a device, then send commands. Upload a PCAP to pair a new device.</p>
+  </header>
 
-  <div class="pad">
-    <div></div>
-    <button id="btn-up">↑</button>
-    <div></div>
+  <main class="layout">
+    <!-- CONTROL AREA -->
+    <section class="card">
+      <div class="card-header">
+        <h2>Control</h2>
+      </div>
 
-    <button id="btn-left">←</button>
-    <div></div>
-    <button id="btn-right">→</button>
+      <div class="row">
+        <label class="label" for="device-select">Device</label>
+        <select id="device-select" class="select"></select>
+        <button id="btn-reload" class="btn">Reload</button>
+      </div>
 
-    <div></div>
-    <button id="btn-down">↓</button>
-    <div></div>
-  </div>
+      <div id="keypad" class="keypad">
+        <div class="keys-grid grid-10">
+          <button class="btn key" data-cmd="1">1</button>
+          <button class="btn key" data-cmd="2">2</button>
+          <button class="btn key" data-cmd="3">3</button>
+          <button class="btn key" data-cmd="4">4</button>
+          <button class="btn key" data-cmd="5">5</button>
+          <button class="btn key" data-cmd="6">6</button>
+          <button class="btn key" data-cmd="7">7</button>
+          <button class="btn key" data-cmd="8">8</button>
+          <button class="btn key" data-cmd="9">9</button>
+          <button class="btn key" data-cmd="0">0</button>
+        </div>
 
-  <select id="device-select"></select>
-  
-  <div class="upload-area">
-    <input id="device-name" type="text" placeholder="Device name (e.g. lobby-1)" />
-    <button id="btn-upload">Upload PCAP…</button>
-    <input type="file" id="pcap-input" accept=".pcap,.pcapng" style="display:none" />
-  </div>
+        <div class="keys-grid grid-2">
+          <button class="btn key" data-cmd="CH_PLUS">CH+</button>
+          <button class="btn key" data-cmd="CH_MINUS">CH-</button>
+        </div>
 
-  <div id="status">Ready.</div>
+        <div class="nav-pad" aria-label="Navigation">
+          <div></div>
+          <button class="btn key" data-cmd="UP" title="UP">↑</button>
+          <div></div>
+
+          <button class="btn key" data-cmd="LEFT" title="LEFT">←</button>
+          <button class="btn key ok" data-cmd="OK" title="OK">OK</button>
+          <button class="btn key" data-cmd="RIGHT" title="RIGHT">→</button>
+
+          <div></div>
+          <button class="btn key" data-cmd="DOWN" title="DOWN">↓</button>
+          <div></div>
+        </div>
+
+        <div class="keys-grid grid-3">
+          <button class="btn key" data-cmd="RETURN">Return</button>
+          <button class="btn key" data-cmd="HOME">Home</button>
+          <button class="btn key" data-cmd="MENU">Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN / PAIRING AREA -->
+    <section class="card admin">
+      <div class="card-header">
+        <h2>Admin</h2>
+        <span class="badge">Pair / Upload</span>
+      </div>
+
+      <div class="row">
+        <label class="label" for="device-name">Device name</label>
+        <input id="device-name" class="input" type="text" placeholder="e.g. lobby-1" />
+      </div>
+
+      <div class="row">
+        <button id="btn-upload" class="btn primary">Upload PCAP…</button>
+        <input type="file" id="pcap-input" accept=".pcap,.pcapng" style="display:none" />
+        <p class="hint">
+          Capture keys in this order: 1…0, CH+/CH-, UP/RIGHT/DOWN/LEFT, OK, RETURN, HOME, MENU.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div id="status" class="status">Ready.</div>
+  </footer>
 
   <script src="assets/index.js"></script>
 </body>
