@@ -5,105 +5,121 @@ const require = createRequire(import.meta.url);
 const PcapParser = require("pcap-parser");
 
 /**
- * Parse a PCAP file and extract MAG STB connection params.
- * Returns an object that matches SQL "device" table column names: ip, port, blob
- *
- * @param {string} filePath
- * @param {{ signature?: string }} [options]
- * @returns {Promise<{ ip: string, port: number, blob: string }>}
+ * Parse PCAP and return { ip, port, blob, keymap }
+ * - blob = rc-code-req payload without last 3 bytes
+ * - keymap = { KEY_NAME: "xxxxxx" } where value is last 3 bytes (6 hex chars)
  */
 export default function parsePcap(filePath, options = {}) {
-    const signature = options.signature ?? "rc-code-req";
-    const rcSig = Buffer.from(signature, "ascii");
+  const keysSequence =
+    options.keysSequence ??
+    [
+      "1","2","3","4","5","6","7","8","9","0",
+      "CH_PLUS","CH_MINUS",
+      "UP","RIGHT","DOWN","LEFT",
+      "OK","RETURN","HOME","MENU"
+    ];
 
-    return new Promise((resolve, reject) => {
-        let resolved = false;
-        let packetCount = 0;
+  const rcSig = Buffer.from("rc-code-req", "ascii");
 
-        const stream = fs.createReadStream(filePath);
-        const parser = PcapParser.parse(stream);
+  return new Promise((resolve, reject) => {
+    let packetCount = 0;
 
-        const cleanup = () => {
-            parser.removeAllListeners();
-            stream.removeAllListeners();
-            // stop reading further packets once we found what we need
-            if (!stream.destroyed) stream.destroy();
-        };
+    let foundIp = null;
+    let foundPort = null;
 
-        const fail = (err) => {
-            if (resolved) return;
-            resolved = true;
-            cleanup();
-            reject(err);
-        };
+    let baseBlob = null;
+    const suffixes = [];
 
-        parser.on("packet", (packet) => {
-            if (resolved) return;
+    const stream = fs.createReadStream(filePath);
+    const parser = PcapParser.parse(stream);
 
-            packetCount++;
-            const buf = packet?.data;
-            if (!Buffer.isBuffer(buf) || buf.length < 20) return;
+    const cleanup = () => {
+      parser.removeAllListeners();
+      stream.removeAllListeners();
+      if (!stream.destroyed) stream.destroy();
+    };
 
-            // Find IPv4 header offset:
-            // - sometimes packet.data starts at IPv4
-            // - often it's Ethernet (14 bytes) then IPv4
-            // - sometimes Ethernet + VLAN (18 bytes) then IPv4
-            let ipOffset = -1;
-            if ((buf[0] >> 4) === 4) ipOffset = 0;
-            else if (buf.length >= 14 + 20 && (buf[14] >> 4) === 4) ipOffset = 14;
-            else if (buf.length >= 18 + 20 && (buf[18] >> 4) === 4) ipOffset = 18;
-            else return;
+    const fail = (err) => {
+      cleanup();
+      reject(err);
+    };
 
-            const version = buf[ipOffset] >> 4;
-            if (version !== 4) return;
+    parser.on("packet", (packet) => {
+      packetCount++;
+      const buf = packet?.data;
+      if (!Buffer.isBuffer(buf) || buf.length < 20) return;
 
-            const ihl = (buf[ipOffset] & 0x0f) * 4;
-            if (ihl < 20) return;
+      // Find IPv4 header offset
+      let ipOffset = -1;
+      if ((buf[0] >> 4) === 4) ipOffset = 0;
+      else if (buf.length >= 14 + 20 && (buf[14] >> 4) === 4) ipOffset = 14;
+      else if (buf.length >= 18 + 20 && (buf[18] >> 4) === 4) ipOffset = 18;
+      else return;
 
-            const protocol = buf[ipOffset + 9];
-            if (protocol !== 6) return; // TCP only
+      const ihl = (buf[ipOffset] & 0x0f) * 4;
+      if (ihl < 20) return;
 
-            if (buf.length < ipOffset + ihl + 20) return;
+      const protocol = buf[ipOffset + 9];
+      if (protocol !== 6) return; // TCP only
 
-            const ipDstOffset = ipOffset + 16;
-            const ip = `${buf[ipDstOffset]}.${buf[ipDstOffset + 1]}.${buf[ipDstOffset + 2]}.${buf[ipDstOffset + 3]}`;
+      const tcpOffset = ipOffset + ihl;
+      if (buf.length < tcpOffset + 20) return;
 
-            // TCP header starts right after IP header
-            const tcpOffset = ipOffset + ihl;
+      const dstPort = buf.readUInt16BE(tcpOffset + 2);
+      const tcpHeaderLen = ((buf[tcpOffset + 12] >> 4) & 0x0f) * 4;
+      if (tcpHeaderLen < 20) return;
 
-            const port = buf.readUInt16BE(tcpOffset + 2); // dst port
-            const tcpHeaderLen = ((buf[tcpOffset + 12] >> 4) & 0x0f) * 4;
-            if (tcpHeaderLen < 20) return;
+      const payloadOffset = tcpOffset + tcpHeaderLen;
+      if (payloadOffset > buf.length) return;
 
-            const payloadOffset = tcpOffset + tcpHeaderLen;
-            if (payloadOffset > buf.length) return;
+      const payload = buf.slice(payloadOffset);
+      if (!payload.length) return;
 
-            const payload = buf.slice(payloadOffset);
-            if (payload.length === 0) return;
+      // Only rc-code-req (this automatically ignores ping-req / ping-resp)
+      if (!payload.includes(rcSig)) return;
 
-            // Filter only packets that contain rc-code-req
-            if (!payload.includes(rcSig)) return;
+      // dst IP (STB)
+      const ipDstOffset = ipOffset + 16;
+      const ip = `${buf[ipDstOffset]}.${buf[ipDstOffset + 1]}.${buf[ipDstOffset + 2]}.${buf[ipDstOffset + 3]}`;
 
-            const payloadHex = payload.toString("hex");
+      if (!foundIp) foundIp = ip;
+      if (!foundPort) foundPort = dstPort;
 
-            // remove last 3 bytes (6 hex chars) as the rc part
-            const blob = payloadHex.length >= 6 ? payloadHex.slice(0, -6) : payloadHex;
+      const payloadHex = payload.toString("hex");
+      if (payloadHex.length < 6) return;
 
-            resolved = true;
-            cleanup();
-            resolve({ ip, port, blob });
+      const suffix = payloadHex.slice(-6);
+      const blob = payloadHex.slice(0, -6);
+
+      if (!baseBlob) baseBlob = blob;
+
+      // avoid duplicates if same packet appears twice
+      if (suffixes[suffixes.length - 1] === suffix) return;
+
+      suffixes.push(suffix);
+
+      if (suffixes.length === keysSequence.length) {
+        const keymap = {};
+        for (let i = 0; i < keysSequence.length; i++) {
+          keymap[keysSequence[i]] = suffixes[i];
+        }
+
+        cleanup();
+        return resolve({
+          ip: foundIp,
+          port: foundPort,
+          blob: baseBlob,
+          keymap,
         });
-
-        parser.on("end", () => {
-            if (resolved) return;
-            fail(
-                new Error(
-                    `PCAP parsed (${packetCount} packets) but no "${signature}" payload was found.`
-                )
-            );
-        });
-
-        parser.on("error", (err) => fail(err));
-        stream.on("error", (err) => fail(err));
+      }
     });
+
+    parser.on("end", () => {
+      const missing = keysSequence.length - suffixes.length;
+      fail(new Error(`PCAP ended. Collected ${suffixes.length}/${keysSequence.length} keys. Missing ${missing}.`));
+    });
+
+    parser.on("error", fail);
+    stream.on("error", fail);
+  });
 }

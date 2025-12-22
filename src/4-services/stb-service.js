@@ -24,8 +24,21 @@ class StbService {
         }
     }
 
-}
+    async renameStb() {
+        
+    }
 
+    async deleteStb() {
+        
+    }
+
+    async getAllStb() {
+        const stbs = await sqlService.getAllDevices();
+        return stbs;
+    }
+
+
+}
 
 const stbService = new StbService();
 

@@ -11,6 +11,12 @@ const uploadsDir = path.join(process.cwd(), "uploads");
 fs.mkdirSync(uploadsDir, { recursive: true });
 const upload = multer({ dest: uploadsDir });
 
+// Get http://serverAddr:3000/api/get-devices
+router.get("/get-devices", async (req, res) => {
+  const devices = await stbService.getAllStb();
+  res.json({ ok: true, devices });
+});
+
 
 router.post("/upload-pcap", upload.single("pcap"), async (req, res) => {
 

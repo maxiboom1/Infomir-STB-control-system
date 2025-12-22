@@ -10,7 +10,7 @@ const app = express();
 const PORT = 3000;
 
 // ===== MAG CONFIG (pairing-specific) =====
-const MAG_IP = "192.168.0.108";
+const MAG_IP = "192.168.0.119";
 const MAG_PORT = 40611;
 
 const actions = {
@@ -21,11 +21,17 @@ const actions = {
 };
 
 const stbObj = {
-  office:
+  office_original:
     "00000001700072632d636f64652d72657172632d636f64652d72657172632d636f64652d7265" +
     "0fbb1f99e64d1f819128ea8487e5b61c8dee8426754bf84c18ab64600025cc60b898894f53de" +
     "10dd7d70f1c7956160867eeceb325c3fe5813939dc11c3eb7b26268c9f5a2371b3",
+  office: 
+    "00000001700072632d636f64652d72657172632d636f64652d72657172632d636f64652d7265" +
+    "b6d2fa49ced683f3f4aebbae1f90369f098b6d678f90a29b83163d8b816a9784e07f46a928c3" + 
+    "71d1f3af2e55fb39e0902291756b394261d438c70303401c1fa2ea4f59b11b7d46"
 };
+
+
 
 // connect-req payload (TCP payload only)
 const connectReqHex =
@@ -188,7 +194,6 @@ function parsePcap(filePath) {
     console.error("PCAP parse error:", err);
   });
 }
-
 
 
 app.post("/api/upload-pcap", upload.single("pcap"), (req, res) => {
