@@ -48,3 +48,11 @@ Instead:
 ### 6) Versions
 - STB model: Infomir MAG540w3, FW: 220 (description: 2.20.10-540), Hardware version: 18C-P0L-00
 - Andriod network sniffer application that I used: "PCAPdroid" with targed apps - "MAGic Remote".
+
+
+## Dev log
+
+### 0.1
+- Implemented full layered project structure
+- Currently - we can upload pcap with device name, to route handler ==> stbService.addNewStb(device, name), it will use utility to parse pcap and then write it to sql device table
+- In case of duplicated name/ip/blob - sql will throw err with reason - we show it to user. 

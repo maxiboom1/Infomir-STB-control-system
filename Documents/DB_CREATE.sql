@@ -1,10 +1,13 @@
 ﻿/* =========================================================
    Minimal MAG-Control DB (stateless) — MSSQL Create Script
-   Tables (as in your diagram):
+   Tables:
      - device
      - zone
      - users
      - user_zones   (user↔zone mapping)
+   Notes:
+     - No FKs (all relations handled in app logic)
+     - Minimal indexing: only UNIQUE constraints where required
    ========================================================= */
 
 -- 1) Create DB (if not exists)
@@ -29,11 +32,10 @@ BEGIN
     [name]   NVARCHAR(64)       NOT NULL,
     [layout] NVARCHAR(MAX)      NULL,         -- JSON/string layout if you want
     [label]  NVARCHAR(128)      NULL,
-    [tag]    NVARCHAR(64)       NULL
-  );
+    [tag]    NVARCHAR(64)       NULL,
 
-  -- unique zone name (optional but recommended)
-  CREATE UNIQUE INDEX UX_zone_name ON dbo.[zone]([name]);
+    CONSTRAINT UQ_zone_name UNIQUE ([name])
+  );
 END
 GO
 
@@ -47,10 +49,10 @@ BEGIN
     [password] NVARCHAR(255)      NOT NULL,   -- store HASH, not plain text
     [role]     NVARCHAR(32)       NOT NULL CONSTRAINT DF_users_role DEFAULT N'operator',
     [label]    NVARCHAR(128)      NULL,
-    [tag]      NVARCHAR(64)       NULL
-  );
+    [tag]      NVARCHAR(64)       NULL,
 
-  CREATE UNIQUE INDEX UX_users_username ON dbo.[users]([username]);
+    CONSTRAINT UQ_users_username UNIQUE ([username])
+  );
 END
 GO
 
@@ -63,26 +65,21 @@ BEGIN
     [name]     NVARCHAR(64)       NOT NULL,
     [ip]       VARCHAR(45)        NOT NULL,   -- IPv4/IPv6
     [port]     INT                NOT NULL,
-    [blob]     NVARCHAR(MAX)      NULL,       -- rc-code-req blob (hex/base64/etc)
-    [zone]     INT                NULL,       -- FK to zone.id (your "zone" column)
+    [blob]     VARCHAR(512)       NOT NULL,   -- rc-code-req blob (hex)
+    [zone]     INT                NULL,       -- no FK; handled in app logic
     [isOnline] BIT                NOT NULL CONSTRAINT DF_device_isOnline DEFAULT (0),
     [tag]      NVARCHAR(64)       NULL,
-    [label]    NVARCHAR(128)      NULL
+    [label]    NVARCHAR(128)      NULL,
+
+    CONSTRAINT UQ_device_name    UNIQUE ([name]),
+    CONSTRAINT UQ_device_ip UNIQUE ([ip]),
+    CONSTRAINT UQ_device_blob    UNIQUE ([blob])
   );
-
-  -- Helpful indexes
-  CREATE UNIQUE INDEX UX_device_ipPort ON dbo.[device]([ip],[port]);
-  CREATE INDEX IX_device_zone ON dbo.[device]([zone]);
-
-  -- FK (optional but recommended)
-  ALTER TABLE dbo.[device]
-    ADD CONSTRAINT FK_device_zone
-    FOREIGN KEY ([zone]) REFERENCES dbo.[zone]([id]);
 END
 GO
 
 
--- user_zones (by your columns: user_id, zone_id)
+-- user_zones (user_id, zone_id mapping; no FKs)
 IF OBJECT_ID(N'dbo.[user_zones]', N'U') IS NULL
 BEGIN
   CREATE TABLE dbo.[user_zones] (
@@ -90,23 +87,9 @@ BEGIN
     [user_id] INT                NOT NULL,
     [zone_id] INT                NOT NULL,
     [label]   NVARCHAR(128)      NULL,
-    [tag]     NVARCHAR(64)       NULL
+    [tag]     NVARCHAR(64)       NULL,
+
+    CONSTRAINT UQ_user_zones_user_zone UNIQUE ([user_id], [zone_id])
   );
-
-  -- FKs
-  ALTER TABLE dbo.[user_zones]
-    ADD CONSTRAINT FK_user_zones_user
-    FOREIGN KEY ([user_id]) REFERENCES dbo.[users]([id]);
-
-  ALTER TABLE dbo.[user_zones]
-    ADD CONSTRAINT FK_user_zones_zone
-    FOREIGN KEY ([zone_id]) REFERENCES dbo.[zone]([id]);
-
-  -- Prevent duplicates: same user assigned to same zone twice
-  CREATE UNIQUE INDEX UX_user_zones_user_zone
-    ON dbo.[user_zones]([user_id],[zone_id]);
-
-  CREATE INDEX IX_user_zones_zone
-    ON dbo.[user_zones]([zone_id]);
 END
 GO

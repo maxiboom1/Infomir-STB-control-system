@@ -57,59 +57,13 @@
   </div>
 
   <div class="upload-area">
+    <input id="device-name" type="text" placeholder="Device name (e.g. lobby-1)" />
     <button id="btn-upload">Upload PCAP…</button>
     <input type="file" id="pcap-input" accept=".pcap,.pcapng" style="display:none" />
   </div>
 
   <div id="status">Ready.</div>
 
-  <script>
-    async function send(cmd) {
-      const status = document.getElementById("status");
-      try {
-        status.textContent = `Sending ${cmd}...`;
-        const res = await fetch(`/api/${cmd}`, { method: "POST" });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        status.textContent = `Sent ${cmd}.`;
-      } catch (e) {
-        status.textContent = `Error sending ${cmd}: ${e.message}`;
-      }
-    }
-
-    document.getElementById("btn-up").onclick = () => send("up");
-    document.getElementById("btn-down").onclick = () => send("down");
-    document.getElementById("btn-left").onclick = () => send("left");
-    document.getElementById("btn-right").onclick = () => send("right");
-
-    // ---- PCAP upload ----
-    const uploadBtn = document.getElementById("btn-upload");
-    const fileInput = document.getElementById("pcap-input");
-    const statusEl = document.getElementById("status");
-
-    uploadBtn.onclick = () => fileInput.click();
-
-    fileInput.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const formData = new FormData();
-      formData.append("pcap", file);
-
-      try {
-        statusEl.textContent = "Uploading PCAP...";
-        const res = await fetch("/api/upload-pcap", {
-          method: "POST",
-          body: formData,
-        });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const data = await res.json();
-        statusEl.textContent = data.message || "PCAP uploaded and parsed (check server console).";
-      } catch (err) {
-        statusEl.textContent = "Error uploading PCAP: " + err.message;
-      } finally {
-        fileInput.value = "";
-      }
-    };
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
