@@ -55,7 +55,7 @@ Instead:
 - Public firmware is required in order to enable SSH access (Factory / Portal-updated images have SSH locked).
 - Remote control is performed via SSH using the built-in sendqtevent utility.
 - This approach replaces MagicRemote pairing and TCP blob-based control with direct, deterministic key injection. YES!!! 💥
-- Root credentials are kept default at this stage; password rotation can be automated later once all devices have fixed IPs.
+- Root credentials (user: root, password: 930920)are kept default at this stage; password rotation can be automated later once all devices have fixed IPs.
 
 
 ## Dev log
