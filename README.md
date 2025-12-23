@@ -49,6 +49,14 @@ Instead:
 - STB model: Infomir MAG540w3, FW: 220 (description: 2.20.10-540), Hardware version: 18C-P0L-00
 - Andriod network sniffer application that I used: "PCAPdroid" with targed apps - "MAGic Remote".
 
+### 7) Protocol notes - SSH is an game changer here
+
+- MAG540w3 devices can be updated with Public firmware 2.20.10 (installed from soft.infomir.com, not via embedded portal auto-update).
+- Public firmware is required in order to enable SSH access (Factory / Portal-updated images have SSH locked).
+- Remote control is performed via SSH using the built-in sendqtevent utility.
+- This approach replaces MagicRemote pairing and TCP blob-based control with direct, deterministic key injection. YES!!! 💥
+- Root credentials are kept default at this stage; password rotation can be automated later once all devices have fixed IPs.
+
 
 ## Dev log
 
