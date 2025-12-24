@@ -1,13 +1,11 @@
-import parsePcap from "../3-utilities/pcap-parser.js";
 import sqlService from "./sql-service.js";
 
 class StbService {
 
-    async addNewStb(pcapPath, name) {
-        const device = await parsePcap(pcapPath); // { ip, port, blob }
-        device.name = name;
+    async addNewStb(name) {
+        
         try {
-            const id = await sqlService.addNewDevice(device);
+            //const id = await sqlService.addNewDevice(device);
             return { ok: true, id, message: `Device added: ${device.name}` };
         } catch (err) {
             // Duplicate key errors in SQL Server: 2627 (unique constraint), 2601 (unique index)
