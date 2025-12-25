@@ -3,12 +3,12 @@ import { Client } from "ssh2";
 class SshService {
 
     exec(args) {
-        const { ip, port, user, password, cmd } = args || {};
-        const timeoutMs = args?.timeoutMs ?? 4000;
-
-        if (!ip) throw new Error("SshService.exec: missing ip");
+        const { host, port, username, password, cmd } = args || {};
+        const readyTimeout = args?.readyTimeout ?? 4000;
+        
+        if (!host) throw new Error("SshService.exec: missing host ip");
         if (!port) throw new Error("SshService.exec: missing port");
-        if (!user) throw new Error("SshService.exec: missing user");
+        if (!username) throw new Error("SshService.exec: missing user");
         if (password === undefined || password === null) throw new Error("SshService.exec: missing password");
         if (!cmd) throw new Error("SshService.exec: missing cmd");
 
@@ -25,8 +25,8 @@ class SshService {
             };
 
             const timer = setTimeout(() => {
-                done(new Error(`SSH exec timeout after ${timeoutMs}ms (${ip}:${port})`));
-            }, timeoutMs);
+                done(new Error(`SSH exec timeout after ${readyTimeout}ms (${host}:${port})`));
+            }, readyTimeout);
 
             conn
                 .on("ready", () => {
@@ -58,11 +58,11 @@ class SshService {
                     done(err);
                 })
                 .connect({
-                    host: ip,
+                    host,
                     port,
-                    username: user,
+                    username,
                     password,
-                    readyTimeout: timeoutMs,
+                    readyTimeout,
                     hostVerifier: () => true,
                 });
         });

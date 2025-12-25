@@ -9,7 +9,7 @@
 <body>
   <header class="header">
     <h1>MAG 540 Remote POC</h1>
-    <p class="subtitle">Pick a device, then send commands. Upload a PCAP to pair a new device.</p>
+    <p class="subtitle">Pick a device, then send commands. Use Admin to add devices.</p>
   </header>
 
   <main class="layout">
@@ -66,24 +66,36 @@
       </div>
     </section>
 
-    <!-- ADMIN / PAIRING AREA -->
+    <!-- ADMIN AREA -->
     <section class="card admin">
       <div class="card-header">
-        <h2>Admin</h2>
-        <span class="badge">Pair / Upload</span>
+        <h2>Add device</h2>
+        <span class="badge">Admin</span>
       </div>
 
       <div class="row">
-        <label class="label" for="device-name">Device name</label>
-        <input id="device-name" class="input" type="text" placeholder="e.g. lobby-1" />
+        <label class="label" for="add-name">Name</label>
+        <input id="add-name" class="input" type="text" placeholder="e.g. lobby-1" />
       </div>
 
       <div class="row">
-        <button id="btn-upload" class="btn primary">Upload PCAP…</button>
-        <input type="file" id="pcap-input" accept=".pcap,.pcapng" style="display:none" />
-        <p class="hint">
-          Capture keys in this order: 1…0, CH+/CH-, UP/RIGHT/DOWN/LEFT, OK, RETURN, HOME, MENU.
-        </p>
+        <label class="label" for="add-ip">IP</label>
+        <input id="add-ip" class="input" type="text" placeholder="e.g. 192.168.0.108" />
+      </div>
+
+      <div class="row">
+        <label class="label" for="add-category">Category</label>
+        <select id="add-category" class="select"></select>
+      </div>
+
+      <div class="row">
+        <label class="label" for="add-zone">Zone</label>
+        <select id="add-zone" class="select"></select>
+      </div>
+
+      <div class="row" style="margin-bottom:0;">
+        <button id="btn-add-device" class="btn primary">Add device</button>
+        <p class="hint">Category/Zone dropdowns are loaded dynamically (POC).</p>
       </div>
     </section>
   </main>
