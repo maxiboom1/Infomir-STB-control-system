@@ -1,5 +1,3 @@
-// assets/index.js
-
 const statusEl = document.getElementById("status");
 const selectEl = document.getElementById("device-select");
 const reloadBtn = document.getElementById("btn-reload");
@@ -25,7 +23,7 @@ async function send(command) {
   try {
     statusEl.textContent = `Sending ${command} to device #${deviceId}...`;
 
-    const res = await fetch("/control/send", {
+    const res = await fetch("/api/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ deviceId, command }),

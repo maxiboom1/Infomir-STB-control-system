@@ -1,6 +1,6 @@
 import sqlService from "./sql-service.js";
 
-class StbService {
+class AppService {
 
     async addNewStb(name) {
         
@@ -35,9 +35,14 @@ class StbService {
         return stbs;
     }
 
+    async sendCommand(deviceId, command){
+        const device = await sqlService.getDeviceById(deviceId);
+
+    }
+
 
 }
 
-const stbService = new StbService();
+const appService = new AppService();
 
-export default stbService;
+export default appService;
