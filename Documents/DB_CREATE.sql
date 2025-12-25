@@ -28,11 +28,12 @@ GO
 IF OBJECT_ID(N'dbo.zone', N'U') IS NULL
 BEGIN
   CREATE TABLE dbo.zone (
-    id     INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_zone PRIMARY KEY,
-    name   NVARCHAR(64)       NOT NULL,
-    layout NVARCHAR(MAX)      NULL,         -- JSON/string layout if you want
-    label  NVARCHAR(128)      NULL,
-    tag    NVARCHAR(64)       NULL,
+    id       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_zone PRIMARY KEY,
+    name     NVARCHAR(64)       NOT NULL,
+    category NVARCHAR(64)       NULL,         -- NEW: future-proof grouping (e.g. "Floor 1")
+    layout   NVARCHAR(MAX)      NULL,         -- JSON/string layout if you want
+    label    NVARCHAR(128)      NULL,
+    tag      NVARCHAR(64)       NULL,
 
     CONSTRAINT UQ_zone_name UNIQUE (name)
   );
@@ -63,18 +64,15 @@ BEGIN
   CREATE TABLE dbo.device (
     id       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_device PRIMARY KEY,
     name     NVARCHAR(64)       NOT NULL,
-    ip       VARCHAR(45)        NOT NULL,   -- IPv4/IPv6
-    port     INT                NOT NULL,
-    blob     VARCHAR(512)       NOT NULL,   -- rc-code-req blob (hex)
-    keymap   NVARCHAR(MAX)      NULL,       -- JSON string: {"UP":"xxxxxx", ...}
-    zone     INT                NULL,       -- no FK; handled in app logic
+    ip       VARCHAR(45)        NOT NULL,     -- IPv4/IPv6
+    category NVARCHAR(64)       NULL,         -- NEW: device grouping (optional)
+    zone     INT                NULL,         -- no FK; handled in app logic
     isOnline BIT                NOT NULL CONSTRAINT DF_device_isOnline DEFAULT (0),
     tag      NVARCHAR(64)       NULL,
     label    NVARCHAR(128)      NULL,
 
     CONSTRAINT UQ_device_name UNIQUE (name),
-    CONSTRAINT UQ_device_ip   UNIQUE (ip),
-    CONSTRAINT UQ_device_blob UNIQUE (blob)
+    CONSTRAINT UQ_device_ip   UNIQUE (ip)
   );
 END
 GO
