@@ -2,5 +2,9 @@
     "sqlServerHost": "ALEX-LAPTOP\\SQLEXPRESS", 
     "sqlServerUser": "test",
     "sqlServerPassword": "1234",
-    "sqlServerDatabase": "mag_control"
+    "sqlServerDatabase": "mag_control",
+    
+    "jwtSecret": "The_great_rge_secret_key_323223",
+    "jwtCookieName": "mag_auth",
+    "jwtExpiresMinutes": 30
 } 

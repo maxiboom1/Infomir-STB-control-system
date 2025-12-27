@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MAG Control — Login</title>
+  <link rel="stylesheet" href="/assets/common.css">
+</head>
+<body>
+  <header class="header" style="max-width: 520px;">
+    <h1>MAG Control</h1>
+    <p class="subtitle">Please sign in to continue.</p>
+  </header>
+
+  <main style="max-width: 520px; margin: 0 auto;">
+    <section class="card">
+      <div class="card-header">
+        <h2>Login</h2>
+        <span class="badge">Production</span>
+      </div>
+
+      <form id="login-form" autocomplete="on">
+        <div class="row">
+          <label class="label" for="username">Username</label>
+          <input id="username" class="input" type="text" placeholder="e.g. operator1" required />
+        </div>
+
+        <div class="row">
+          <label class="label" for="password">Password</label>
+          <input id="password" class="input" type="password" placeholder="••••••••" required />
+        </div>
+
+        <div class="row" style="margin-bottom:0;">
+          <button id="btn-login" class="btn primary" type="submit">Login</button>
+          <p class="hint">Session expires automatically (e.g. 30 minutes).</p>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="footer" style="max-width: 520px;">
+    <div id="status" class="status">Ready.</div>
+  </footer>
+
+  <script src="/assets/login.js"></script>
+</body>
+</html>

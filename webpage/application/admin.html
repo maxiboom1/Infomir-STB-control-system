@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MAG Control — Admin</title>
+  <link rel="stylesheet" href="/assets/common.css">
+</head>
+<body>
+  <header class="header">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+      <div>
+        <h1>MAG Control</h1>
+        <p class="subtitle">Admin panel — manage devices, zones/categories, and users.</p>
+      </div>
+      <button id="btn-logout" class="btn">Logout</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="row" style="margin-top:12px; margin-bottom:0;">
+      <button class="btn primary" data-tab="devices">Devices</button>
+      <button class="btn" data-tab="zones">Zones / Categories</button>
+      <button class="btn" data-tab="users">Users</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- =========================
+         TAB: DEVICES
+         ========================= -->
+    <section class="card" data-panel="devices">
+      <div class="card-header">
+        <h2>Control</h2>
+        <span class="badge">Admin</span>
+      </div>
+
+      <div class="row">
+        <label class="label" for="device-select">Device</label>
+        <select id="device-select" class="select"></select>
+        <button id="btn-reload" class="btn">Reload</button>
+      </div>
+
+      <div id="keypad" class="keypad">
+        <div class="keys-grid grid-10">
+          <button class="btn key" data-cmd="1">1</button>
+          <button class="btn key" data-cmd="2">2</button>
+          <button class="btn key" data-cmd="3">3</button>
+          <button class="btn key" data-cmd="4">4</button>
+          <button class="btn key" data-cmd="5">5</button>
+          <button class="btn key" data-cmd="6">6</button>
+          <button class="btn key" data-cmd="7">7</button>
+          <button class="btn key" data-cmd="8">8</button>
+          <button class="btn key" data-cmd="9">9</button>
+          <button class="btn key" data-cmd="0">0</button>
+        </div>
+
+        <div class="keys-grid grid-2">
+          <button class="btn key" data-cmd="CH_PLUS">CH+</button>
+          <button class="btn key" data-cmd="CH_MINUS">CH-</button>
+        </div>
+
+        <div class="nav-pad" aria-label="Navigation">
+          <div></div>
+          <button class="btn key" data-cmd="UP" title="UP">↑</button>
+          <div></div>
+
+          <button class="btn key" data-cmd="LEFT" title="LEFT">←</button>
+          <button class="btn key ok" data-cmd="OK" title="OK">OK</button>
+          <button class="btn key" data-cmd="RIGHT" title="RIGHT">→</button>
+
+          <div></div>
+          <button class="btn key" data-cmd="DOWN" title="DOWN">↓</button>
+          <div></div>
+        </div>
+
+        <div class="keys-grid grid-3">
+          <button class="btn key" data-cmd="RETURN">Return</button>
+          <button class="btn key" data-cmd="HOME">Home</button>
+          <button class="btn key" data-cmd="MENU">Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card admin" data-panel="devices">
+      <div class="card-header">
+        <h2>Create device</h2>
+        <span class="badge">Devices</span>
+      </div>
+
+      <div id="device-prereq" class="status" style="margin-bottom:12px; display:none;">
+        Create Category first / Create Zone first
+      </div>
+
+      <div class="row">
+        <label class="label" for="add-name">Name</label>
+        <input id="add-name" class="input" type="text" placeholder="e.g. lobby-1" />
+      </div>
+
+      <div class="row">
+        <label class="label" for="add-ip">IP</label>
+        <input id="add-ip" class="input" type="text" placeholder="e.g. 192.168.0.108" />
+      </div>
+
+      <div class="row">
+        <label class="label" for="add-category">Category</label>
+        <select id="add-category" class="select"></select>
+      </div>
+
+      <div class="row">
+        <label class="label" for="add-zone">Zone</label>
+        <select id="add-zone" class="select"></select>
+      </div>
+
+      <div class="row" style="margin-bottom:0;">
+        <button id="btn-add-device" class="btn primary">Add device</button>
+        <p class="hint">If Categories/Zones are empty, go to “Zones / Categories” tab first.</p>
+      </div>
+    </section>
+
+    <!-- =========================
+         TAB: ZONES / CATEGORIES
+         ========================= -->
+    <section class="card" data-panel="zones" style="display:none;">
+      <div class="card-header">
+        <h2>Categories</h2>
+        <span class="badge">Zones/Categories</span>
+      </div>
+
+      <div class="row">
+        <label class="label" for="cat-name">New category</label>
+        <input id="cat-name" class="input" type="text" placeholder="e.g. Newsroom" />
+        <button id="btn-cat-create" class="btn primary">Create</button>
+      </div>
+
+      <div class="row" style="margin-bottom:0;">
+        <label class="label">List</label>
+        <select id="cat-list" class="select"></select>
+        <button id="btn-cat-rename" class="btn">Rename</button>
+        <button id="btn-cat-delete" class="btn">Delete</button>
+      </div>
+    </section>
+
+    <section class="card" data-panel="zones" style="display:none;">
+      <div class="card-header">
+        <h2>Zones</h2>
+        <span class="badge">Zones/Categories</span>
+      </div>
+
+      <div class="row">
+        <label class="label" for="zone-name">New zone</label>
+        <input id="zone-name" class="input" type="text" placeholder="e.g. Studio A" />
+        <button id="btn-zone-create" class="btn primary">Create</button>
+      </div>
+
+      <div class="row">
+        <label class="label">Zone</label>
+        <select id="zone-list" class="select"></select>
+        <button id="btn-zone-rename" class="btn">Rename</button>
+        <button id="btn-zone-delete" class="btn">Delete</button>
+      </div>
+
+      <div class="row" style="margin-bottom:0;">
+        <label class="label">Assign</label>
+        <select id="assign-zone" class="select"></select>
+        <span class="badge">→</span>
+        <select id="assign-cat" class="select"></select>
+        <button id="btn-assign-zone-cat" class="btn primary">Assign</button>
+      </div>
+    </section>
+
+    <!-- =========================
+         TAB: USERS
+         ========================= -->
+    <section class="card" data-panel="users" style="display:none;">
+      <div class="card-header">
+        <h2>Users</h2>
+        <span class="badge">Users</span>
+      </div>
+
+      <div class="row">
+        <label class="label">Select</label>
+        <select id="user-list" class="select"></select>
+        <button id="btn-user-reload" class="btn">Reload</button>
+      </div>
+
+      <div class="row">
+        <label class="label" for="user-username">Username</label>
+        <input id="user-username" class="input" type="text" placeholder="e.g. operator1" />
+      </div>
+
+      <div class="row">
+        <label class="label" for="user-password">Password</label>
+        <input id="user-password" class="input" type="password" placeholder="(leave empty to keep)" />
+      </div>
+
+      <div class="row" style="margin-bottom:0;">
+        <button id="btn-user-create" class="btn primary">Create user</button>
+        <button id="btn-user-save" class="btn">Save changes</button>
+        <button id="btn-user-delete" class="btn">Delete</button>
+      </div>
+    </section>
+
+    <section class="card" data-panel="users" style="display:none;">
+      <div class="card-header">
+        <h2>Assign zones to user</h2>
+        <span class="badge">Users</span>
+      </div>
+
+      <div class="row">
+        <label class="label">User zones</label>
+        <select id="user-zones" class="select" multiple size="8" style="min-height:210px;"></select>
+      </div>
+
+      <div class="row">
+        <label class="label">All zones</label>
+        <select id="all-zones" class="select" multiple size="8" style="min-height:210px;"></select>
+      </div>
+
+      <div class="row" style="margin-bottom:0;">
+        <button id="btn-user-assign-zones" class="btn primary">Apply zones</button>
+        <p class="hint">Categories are derived from user’s assigned zones (no direct category assignment).</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div id="status" class="status">Ready.</div>
+  </footer>
+
+  <script src="/assets/admin.js"></script>
+</body>
+</html>

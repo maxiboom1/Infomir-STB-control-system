@@ -1,7 +1,17 @@
 const statusEl = document.getElementById("status");
 const selectEl = document.getElementById("device-select");
 const reloadBtn = document.getElementById("btn-reload");
-
+console.log("user")
+const logoutBtn = document.getElementById("btn-logout");
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } finally {
+      window.location.href = "/login.html";
+    }
+  });
+}
 // --------------------
 // Control buttons
 // --------------------

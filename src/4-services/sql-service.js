@@ -53,6 +53,20 @@ class SqlService {
         const result = await db.execute(sqlQuery, { id });
         return result?.recordset?.[0] || null;
       }
+
+    async getUserByUsername(username) {
+        console.log(username);
+        const sqlQuery = `
+            SELECT TOP 1 id, username, password, role
+            FROM dbo.[users]
+            WHERE username = @username;
+        `;
+        
+        const result = await db.execute(sqlQuery, { username });
+        return result?.recordset?.[0] || null;
+    }
+
+    
 }
 
 const sqlService = new SqlService();

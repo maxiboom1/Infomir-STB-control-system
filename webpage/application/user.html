@@ -3,13 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MAG 540 Remote POC</title>
-  <link rel="stylesheet" href="assets/index.css">
+  <title>MAG Control</title>
+  <link rel="stylesheet" href="/assets/common.css">
 </head>
 <body>
   <header class="header">
-    <h1>MAG 540 Remote POC</h1>
-    <p class="subtitle">Pick a device, then send commands. Use Admin to add devices.</p>
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+      <div>
+        <h1>MAG Control</h1>
+        <p class="subtitle">Pick a device, then send commands.</p>
+      </div>
+      <button id="btn-logout" class="btn">Logout</button>
+    </div>
   </header>
 
   <main class="layout">
@@ -65,45 +70,12 @@
         </div>
       </div>
     </section>
-
-    <!-- ADMIN AREA -->
-    <section class="card admin">
-      <div class="card-header">
-        <h2>Add device</h2>
-        <span class="badge">Admin</span>
-      </div>
-
-      <div class="row">
-        <label class="label" for="add-name">Name</label>
-        <input id="add-name" class="input" type="text" placeholder="e.g. lobby-1" />
-      </div>
-
-      <div class="row">
-        <label class="label" for="add-ip">IP</label>
-        <input id="add-ip" class="input" type="text" placeholder="e.g. 192.168.0.108" />
-      </div>
-
-      <div class="row">
-        <label class="label" for="add-category">Category</label>
-        <select id="add-category" class="select"></select>
-      </div>
-
-      <div class="row">
-        <label class="label" for="add-zone">Zone</label>
-        <select id="add-zone" class="select"></select>
-      </div>
-
-      <div class="row" style="margin-bottom:0;">
-        <button id="btn-add-device" class="btn primary">Add device</button>
-        <p class="hint">Category/Zone dropdowns are loaded dynamically (POC).</p>
-      </div>
-    </section>
   </main>
 
   <footer class="footer">
     <div id="status" class="status">Ready.</div>
   </footer>
 
-  <script src="assets/index.js"></script>
+  <script src="/assets/user.js"></script>
 </body>
 </html>
