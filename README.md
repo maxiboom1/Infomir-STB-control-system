@@ -51,6 +51,7 @@ The system is designed for low-volume usage, with most sessions involving brief 
 - A command queue may be considered for future enhancements.
 
 This strategy ensures efficient performance and minimal network overhead for deployments of 150–200 STBs.
+
 ---
 
 ### 6) Hardware Versions / Environment
@@ -68,6 +69,7 @@ SSH access is critical for remote control:
 - Key emulation is performed via the built-in sendqtevent utility over SSH.
 - Full list of supported sendqtevent commands: [Keystroke Emulation – Infomir Documentation.](https://wiki.infomir.eu/eng/set-top-box/for-developers/stb-linux-webkit/miscellaneous/keystroke-emulation):
 - Default root credentials (user: root, password: 930920) are used at this stage.
+
 ---
 
 ## Change log
