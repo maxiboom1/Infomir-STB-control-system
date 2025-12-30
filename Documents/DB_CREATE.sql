@@ -1,6 +1,6 @@
 ﻿/* =========================================================
    MAG-Control DB — MSSQL Create Script (DEV friendly)
-   Version: v0.7.0 (Step 1 - schema)
+   Version: v0.7.4 (devices.category derived from zones)
    Tables:
      - categories
      - zones
@@ -10,10 +10,19 @@
 
    Notes:
      - DEV script: drops & recreates DB
-     - Includes FKs (delete will fail if referenced)
+     - Category is assigned ONLY to zones.
+     - Devices belong ONLY to zones.
    ========================================================= */
 
--- 1) Create DB
+-- Drop DB (DEV)
+IF DB_ID(N'mag_control') IS NOT NULL
+BEGIN
+  ALTER DATABASE mag_control SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+  DROP DATABASE mag_control;
+END
+GO
+
+-- Create DB
 CREATE DATABASE mag_control;
 GO
 
@@ -21,7 +30,7 @@ USE mag_control;
 GO
 
 /* =======================
-   2) Create tables
+   Create tables
    ======================= */
 
 -- categories
@@ -35,12 +44,12 @@ CREATE TABLE dbo.categories (
 );
 GO
 
--- zones
+-- zones (zone belongs to category)
 CREATE TABLE dbo.zones (
   id          INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_zones PRIMARY KEY,
   name        NVARCHAR(64)       NOT NULL,
   category_id INT                NOT NULL,
-  layout      NVARCHAR(MAX)      NULL,         -- JSON/string layout (optional)
+  layout      NVARCHAR(MAX)      NULL,
   label       NVARCHAR(128)      NULL,
   tag         NVARCHAR(64)       NULL,
 
@@ -79,12 +88,11 @@ CREATE TABLE dbo.user_zones (
 );
 GO
 
--- devices
+-- devices (device belongs only to zone; category derived via zone.category_id)
 CREATE TABLE dbo.devices (
   id          INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_devices PRIMARY KEY,
   name        NVARCHAR(64)       NOT NULL,
-  ip          VARCHAR(45)        NOT NULL,     -- IPv4/IPv6
-  category_id INT                NOT NULL,
+  ip          VARCHAR(45)        NOT NULL,
   zone_id     INT                NOT NULL,
   isOnline    BIT                NOT NULL CONSTRAINT DF_devices_isOnline DEFAULT (0),
   tag         NVARCHAR(64)       NULL,
@@ -93,20 +101,16 @@ CREATE TABLE dbo.devices (
   CONSTRAINT UQ_devices_name UNIQUE (name),
   CONSTRAINT UQ_devices_ip   UNIQUE (ip),
 
-  CONSTRAINT FK_devices_category FOREIGN KEY (category_id)
-    REFERENCES dbo.categories(id),
-
   CONSTRAINT FK_devices_zone FOREIGN KEY (zone_id)
     REFERENCES dbo.zones(id)
 );
 GO
 
 /* =======================
-   3) Helpful indexes
+   Helpful indexes
    ======================= */
-CREATE INDEX IX_zones_category_id ON dbo.zones(category_id);
-CREATE INDEX IX_devices_zone_id   ON dbo.devices(zone_id);
-CREATE INDEX IX_devices_category_id ON dbo.devices(category_id);
-CREATE INDEX IX_user_zones_user_id ON dbo.user_zones(user_id);
-CREATE INDEX IX_user_zones_zone_id ON dbo.user_zones(zone_id);
+CREATE INDEX IX_zones_category_id     ON dbo.zones(category_id);
+CREATE INDEX IX_devices_zone_id       ON dbo.devices(zone_id);
+CREATE INDEX IX_user_zones_user_id    ON dbo.user_zones(user_id);
+CREATE INDEX IX_user_zones_zone_id    ON dbo.user_zones(zone_id);
 GO

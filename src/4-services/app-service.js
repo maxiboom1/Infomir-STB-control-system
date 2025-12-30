@@ -8,25 +8,17 @@ class AppService {
 
     /* =========================Devices========================= */
 
-    async addNewStb(device) { // Expected device { name, ip, categoryId, zoneId }
-
+    async addNewStb(device) { // Expected device { name, ip, zoneId }
         try {
-            const id = await sqlService.addNewDevice(device);
-            return { ok: true, id, message: `Device added: ${device.name}` };
+          const id = await sqlService.addNewDevice(device);
+          return { ok: true, id, message: `Device added: ${device.name}` };
         } catch (err) {
-            // Duplicate key errors in SQL Server: 2627 (unique constraint), 2601 (unique index)
-            if (err?.number === 2627 || err?.number === 2601) {
-                const msg = String(err?.message || "");
-                const m = msg.match(/constraint '([^']+)'/i);
-                const constraint = m?.[1] || "UNIQUE";
-
-                return { ok: false, status: 409, message: `Device already exists (${constraint})` };
-            }
-
-            // other errors
-            return { ok: false, status: 500, message: "SQL error" };
+          if (err?.number === 2627 || err?.number === 2601) {
+            return { ok: false, status: 409, message: "Device already exists (duplicate name/ip)" };
+          }
+          return { ok: false, status: 500, message: "SQL error" };
         }
-    }
+      }
 
     async getAllStb() {
         const stbs = await sqlService.getAllDevices();
@@ -51,11 +43,15 @@ class AppService {
         const safePatch = {};
         if (patch?.name !== undefined) safePatch.name = String(patch.name || "").trim();
         if (patch?.ip !== undefined) safePatch.ip = String(patch.ip || "").trim();
-        if (patch?.categoryId !== undefined) safePatch.categoryId = Number(patch.categoryId);
         if (patch?.zoneId !== undefined) safePatch.zoneId = Number(patch.zoneId);
         if (patch?.isOnline !== undefined) safePatch.isOnline = patch.isOnline ? 1 : 0;
         if (patch?.tag !== undefined) safePatch.tag = String(patch.tag || "");
         if (patch?.label !== undefined) safePatch.label = String(patch.label || "");
+        
+        // Optional hard-rule:
+        if (patch?.categoryId !== undefined) {
+          return { ok: false, status: 400, message: "Device category is derived from zone" };
+        }
 
         // Optional: prevent setting empty name/ip if provided
         if (patch?.name !== undefined && !safePatch.name) {
@@ -64,6 +60,10 @@ class AppService {
         if (patch?.ip !== undefined && !safePatch.ip) {
             return { ok: false, status: 400, message: "Device IP cannot be empty" };
         }
+
+        if (patch?.zoneId !== undefined && (!Number.isInteger(safePatch.zoneId) || safePatch.zoneId <= 0)) {
+            return { ok: false, status: 400, message: "Invalid zone id" };
+          }
 
         try {
             const affected = await sqlService.updateDevice(id, safePatch);
