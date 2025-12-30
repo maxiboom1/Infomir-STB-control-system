@@ -161,8 +161,8 @@ router.get("/users", requireAuth, requireAdmin, async (req, res) => {
 });
 
 router.post("/users", requireAuth, requireAdmin, async (req, res) => {
-    const { username, password } = req.body || {};
-    const result = await appService.createUser({ username, password });
+    const { username, password, role, label, tag } = req.body || {};
+    const result = await appService.createUser({ username, password, role, label, tag });
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
@@ -171,7 +171,7 @@ router.post("/users", requireAuth, requireAdmin, async (req, res) => {
 
 router.put("/users/:id", requireAuth, requireAdmin, async (req, res) => {
     const id = req.params.id;
-    const patch = req.body; // { username?, password? }
+    const patch = req.body; // { username?, password?, role?, label?, tag? }
     const result = await appService.updateUser(id, patch);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);

@@ -206,17 +206,23 @@ class AppService {
         return { ok: true, users };
     }
 
-    async createUser({ username, password }) {
+    async createUser({ username, password, role, label, tag }) {
         const u = String(username || "").trim();
         const p = String(password || "");
+        const r = String(role || "operator").trim().toLowerCase();
+        const lbl = (label !== undefined) ? String(label || "").trim() : null;
+        const tg = (tag !== undefined) ? String(tag || "").trim() : null;
 
         if (!u) return { ok: false, status: 400, message: "Username is required" };
         if (!p) return { ok: false, status: 400, message: "Password is required" };
+        if (!r || (r !== "operator" && r !== "admin")) {
+            return { ok: false, status: 400, message: "Invalid role" };
+        }
 
         const hash = await bcrypt.hash(p, 10);
 
         try {
-            const id = await sqlService.createUser({ username: u, password: hash, role: "operator" });
+            const id = await sqlService.createUser({ username: u, password: hash, role: r, label: lbl, tag: tg });
             return { ok: true, id, message: "User created" };
         } catch {
             return { ok: false, status: 409, message: "Username already exists" };
@@ -227,9 +233,11 @@ class AppService {
         const uid = Number(id);
         if (!Number.isInteger(uid) || uid <= 0) return { ok: false, status: 400, message: "Invalid user id" };
 
-        // Never allow role change via API in this phase (minimal + safe)
         const username = patch?.username !== undefined ? String(patch.username || "").trim() : undefined;
         const password = patch?.password !== undefined ? String(patch.password || "") : undefined;
+        const role = patch?.role !== undefined ? String(patch.role || "").trim().toLowerCase() : undefined;
+        const label = patch?.label !== undefined ? String(patch.label || "").trim() : undefined;
+        const tag = patch?.tag !== undefined ? String(patch.tag || "").trim() : undefined;
 
         if (username !== undefined && !username) return { ok: false, status: 400, message: "Username cannot be empty" };
 
@@ -240,6 +248,16 @@ class AppService {
 
         const patchForSql = {};
         if (username !== undefined) patchForSql.username = username;
+
+        if (role !== undefined) {
+            if (!role || (role !== "operator" && role !== "admin")) {
+                return { ok: false, status: 400, message: "Invalid role" };
+            }
+            patchForSql.role = role;
+        }
+
+        if (label !== undefined) patchForSql.label = label;
+        if (tag !== undefined) patchForSql.tag = tag;
 
         if (password !== undefined) {
             if (!password) return { ok: false, status: 400, message: "Password cannot be empty" };

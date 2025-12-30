@@ -200,7 +200,7 @@ class SqlService {
 
   async getAllUsers() {
     const sqlQuery = `
-      SELECT id, username, role
+      SELECT id, username, role, label, tag
       FROM dbo.[users]
       ORDER BY username;
     `;
@@ -229,13 +229,19 @@ class SqlService {
     return result?.recordset?.[0] || null;
   }
 
-  async createUser({ username, password, role }) {
+  async createUser({ username, password, role, label, tag }) {
     const sqlQuery = `
-      INSERT INTO dbo.[users] (username, password, role)
+      INSERT INTO dbo.[users] (username, password, role, label, tag)
       OUTPUT inserted.id
-      VALUES (@username, @password, @role);
+      VALUES (@username, @password, @role, @label, @tag);
     `;
-    const result = await db.execute(sqlQuery, { username, password, role });
+    const result = await db.execute(sqlQuery, {
+      username,
+      password,
+      role,
+      label: label ?? null,
+      tag: tag ?? null,
+    });
     return result?.recordset?.[0]?.id;
   }
 
@@ -243,14 +249,20 @@ class SqlService {
     const values = {
       id,
       username: patch.username ?? null,
-      password: patch.password ?? null
+      password: patch.password ?? null,
+      role: patch.role ?? null,
+      label: patch.label ?? null,
+      tag: patch.tag ?? null,
     };
 
     const sqlQuery = `
       UPDATE dbo.[users]
       SET
         username = COALESCE(@username, username),
-        password = COALESCE(@password, password)
+        password = COALESCE(@password, password),
+        role     = COALESCE(@role, role),
+        label    = COALESCE(@label, label),
+        tag      = COALESCE(@tag, tag)
       WHERE id = @id;
 
       SELECT @@ROWCOUNT AS affected;
@@ -298,6 +310,26 @@ class SqlService {
     }
 
     return true;
+  }
+
+  // Compatibility helpers used by app-service.js
+  async getZoneIdsForUser(userId) {
+    return this.getUserZones(userId);
+  }
+
+  async replaceUserZones(userId, zoneIds) {
+    await db.execute(`DELETE FROM dbo.[user_zones] WHERE user_id = @user_id;`, { user_id: userId });
+
+    let count = 0;
+    for (const zid of (zoneIds || [])) {
+      const insQuery = `
+        INSERT INTO dbo.[user_zones] (user_id, zone_id)
+        VALUES (@user_id, @zone_id);
+      `;
+      await db.execute(insQuery, { user_id: userId, zone_id: zid });
+      count++;
+    }
+    return count;
   }
 }
 
