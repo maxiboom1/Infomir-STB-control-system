@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MAG Control — Admin</title>
 
-  <!-- Keep common.css for inputs/buttons base -->
-  <link rel="stylesheet" href="/assets/common.css">
   <!-- Admin-only layout/theme -->
   <link rel="stylesheet" href="/assets/admin.css">
 </head>
@@ -22,8 +20,8 @@
       </div>
 
       <nav class="nav-tabs">
-        <button class="nav-tab active" data-tab="devices">Devices</button>
-        <button class="nav-tab" data-tab="catzones">Categories & Zones</button>
+        <button class="nav-tab active" data-tab="catzones">Zones</button>
+        <button class="nav-tab" data-tab="devices">Devices</button>
         <button class="nav-tab" data-tab="users">Users</button>
       </nav>
 
@@ -38,7 +36,7 @@
       <!-- =========================
            TAB: DEVICES
            ========================= -->
-      <section class="tab-panel" data-panel="devices">
+      <section class="tab-panel" data-panel="devices" style="display:none;">
         <div class="page-header">
           <h1>Devices</h1>
           <div class="page-hint">Create, edit, delete, and reassign devices to zones.</div>
@@ -126,7 +124,7 @@
       <!-- =========================
            TAB: CATEGORIES & ZONES
            ========================= -->
-      <section class="tab-panel" data-panel="catzones" style="display:none;">
+      <section class="tab-panel" data-panel="catzones">
         <div class="page-header">
           <h1>Categories & Zones</h1>
           <div class="page-hint">Create categories, create zones, and assign zones to categories.</div>
@@ -303,14 +301,6 @@
                 <input id="user-add-password" class="input" type="password" placeholder="Temporary password" />
               </div>
 
-              <div class="form-row">
-                <label class="label" for="user-add-role">Role</label>
-                <select id="user-add-role" class="select">
-                  <option value="operator" selected>operator</option>
-                  <option value="admin">admin</option>
-                </select>
-              </div>
-
               <div class="actions">
                 <button id="btn-user-add" class="btn">Add</button>
                 <div id="user-add-note" class="hint"></div>
@@ -330,24 +320,6 @@
               <div class="form-row">
                 <label class="label" for="user-edit-username">Username</label>
                 <input id="user-edit-username" class="input" type="text" />
-              </div>
-
-              <div class="form-row">
-                <label class="label" for="user-edit-role">Role</label>
-                <select id="user-edit-role" class="select">
-                  <option value="operator">operator</option>
-                  <option value="admin">admin</option>
-                </select>
-              </div>
-
-              <div class="form-row">
-                <label class="label" for="user-edit-label">Label</label>
-                <input id="user-edit-label" class="input" type="text" placeholder="Optional" />
-              </div>
-
-              <div class="form-row">
-                <label class="label" for="user-edit-tag">Tag</label>
-                <input id="user-edit-tag" class="input" type="text" placeholder="Optional" />
               </div>
 
               <div class="form-row">

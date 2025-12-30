@@ -209,14 +209,17 @@ class AppService {
     async createUser({ username, password, role, label, tag }) {
         const u = String(username || "").trim();
         const p = String(password || "");
-        const r = String(role || "operator").trim().toLowerCase();
-        const lbl = (label !== undefined) ? String(label || "").trim() : null;
-        const tg = (tag !== undefined) ? String(tag || "").trim() : null;
+        // Role/label/tag are internal. System has exactly one constant admin user.
+        // All created users are operators.
+        const r = "operator";
+        const lbl = null;
+        const tg = null;
 
         if (!u) return { ok: false, status: 400, message: "Username is required" };
         if (!p) return { ok: false, status: 400, message: "Password is required" };
-        if (!r || (r !== "operator" && r !== "admin")) {
-            return { ok: false, status: 400, message: "Invalid role" };
+        // Reject attempts to create additional admins.
+        if (role !== undefined && String(role || "").trim().toLowerCase() !== "operator") {
+            return { ok: false, status: 400, message: "Role is not configurable" };
         }
 
         const hash = await bcrypt.hash(p, 10);
@@ -235,9 +238,10 @@ class AppService {
 
         const username = patch?.username !== undefined ? String(patch.username || "").trim() : undefined;
         const password = patch?.password !== undefined ? String(patch.password || "") : undefined;
-        const role = patch?.role !== undefined ? String(patch.role || "").trim().toLowerCase() : undefined;
-        const label = patch?.label !== undefined ? String(patch.label || "").trim() : undefined;
-        const tag = patch?.tag !== undefined ? String(patch.tag || "").trim() : undefined;
+        // role/label/tag are internal and not editable through the admin UI.
+        const role = undefined;
+        const label = undefined;
+        const tag = undefined;
 
         if (username !== undefined && !username) return { ok: false, status: 400, message: "Username cannot be empty" };
 
@@ -249,15 +253,7 @@ class AppService {
         const patchForSql = {};
         if (username !== undefined) patchForSql.username = username;
 
-        if (role !== undefined) {
-            if (!role || (role !== "operator" && role !== "admin")) {
-                return { ok: false, status: 400, message: "Invalid role" };
-            }
-            patchForSql.role = role;
-        }
-
-        if (label !== undefined) patchForSql.label = label;
-        if (tag !== undefined) patchForSql.tag = tag;
+        // Ignore attempts to patch role/label/tag.
 
         if (password !== undefined) {
             if (!password) return { ok: false, status: 400, message: "Password cannot be empty" };

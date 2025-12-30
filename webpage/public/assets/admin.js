@@ -119,6 +119,7 @@ function setTab(tabName) {
 tabButtons.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
 
 document.addEventListener("DOMContentLoaded", () => {
-  const defaultTab = localStorage.getItem("adminTab") || "devices";
+  // Default to Zones first (Devices depend on Zones).
+  const defaultTab = localStorage.getItem("adminTab") || "catzones";
   setTab(defaultTab);
 });

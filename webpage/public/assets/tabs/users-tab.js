@@ -43,8 +43,7 @@ export function initUsersTab(shared) {
       .filter(u => {
         if (!search) return true;
         const name = String(u.username || "").toLowerCase();
-        const role = String(u.role || "").toLowerCase();
-        return name.includes(search) || role.includes(search);
+        return name.includes(search);
       })
       .sort((a, b) => String(a.username).localeCompare(String(b.username), undefined, { sensitivity: "base" }));
 
@@ -68,7 +67,7 @@ export function initUsersTab(shared) {
 
       const right = document.createElement("div");
       right.className = "muted";
-      right.textContent = u.role || "";
+      right.textContent = ""; // role is internal and not shown in UI
 
       row.appendChild(left);
       row.appendChild(right);
@@ -141,9 +140,6 @@ export function initUsersTab(shared) {
   function setUserActionsEnabled(enabled, isAdminUser = false) {
     const editIds = [
       "user-edit-username",
-      "user-edit-role",
-      "user-edit-label",
-      "user-edit-tag",
       "user-edit-password",
       "btn-user-save",
       "btn-user-delete",
@@ -181,25 +177,7 @@ export function initUsersTab(shared) {
     const editUsername = $("user-edit-username");
     if (editUsername) editUsername.value = selected?.username || "";
 
-    // Role policy: only one system admin exists; all created users are operators.
-    // Keep role read-only in the UI (no role selection).
-    const editRole = $("user-edit-role");
-    if (editRole) {
-      if (isAdmin) {
-        editRole.innerHTML = '<option value="admin">admin</option>';
-        editRole.value = "admin";
-      } else {
-        editRole.innerHTML = '<option value="operator">operator</option>';
-        editRole.value = "operator";
-      }
-      editRole.disabled = true;
-    }
-
-    const editLabel = $("user-edit-label");
-    if (editLabel) editLabel.value = selected?.label || "";
-
-    const editTag = $("user-edit-tag");
-    if (editTag) editTag.value = selected?.tag || "";
+    // Role/label/tag are internal and not exposed in UI.
 
     const editPass = $("user-edit-password");
     if (editPass) editPass.value = "";
@@ -279,14 +257,6 @@ export function initUsersTab(shared) {
 
     state.inited = true;
 
-    // Role policy: one system admin only. UI does not allow selecting role.
-    const addRoleEl = $("user-add-role");
-    if (addRoleEl) {
-      addRoleEl.innerHTML = '<option value="operator">operator</option>';
-      addRoleEl.value = "operator";
-      addRoleEl.disabled = true;
-    }
-
     $("btn-user-reload")?.addEventListener("click", () => reloadUsers());
     $("user-search")?.addEventListener("input", () => renderUserList());
 
@@ -310,13 +280,13 @@ export function initUsersTab(shared) {
       const note = $("user-add-note");
       const username = String($("user-add-username")?.value || "").trim();
       const password = String($("user-add-password")?.value || "");
-      const role = "operator";
 
       if (!username) return setHint(note, "Username is required", true);
       if (!password) return setHint(note, "Password is required", true);
 
       setHint(note, "Adding...");
-      const r = await api("/api/users", jsonOptions("POST", { username, password, role }));
+      // Role is internal and fixed to operator for all created users.
+      const r = await api("/api/users", jsonOptions("POST", { username, password }));
       if (!r.ok) return setHint(note, r.data?.message || "Add failed", true);
 
       setHint(note, "User created");
@@ -336,14 +306,11 @@ export function initUsersTab(shared) {
       if (user.role === "admin") return setStatus("Admin user cannot be modified");
 
       const username = String($("user-edit-username")?.value || "").trim();
-      const role = "operator";
-      const label = String($("user-edit-label")?.value || "").trim();
-      const tag = String($("user-edit-tag")?.value || "").trim();
       const password = String($("user-edit-password")?.value || "");
 
       if (!username) return setStatus("Username is required");
 
-      const patch = { username, role, label, tag };
+      const patch = { username };
       if (password) patch.password = password;
 
       setHint($("user-edit-note"), "Saving...");
