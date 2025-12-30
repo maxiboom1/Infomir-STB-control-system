@@ -213,4 +213,14 @@ router.put("/users/:id/zones", requireAuth, requireAdmin, async (req, res) => {
 });
 
 
+// ==========================
+// User UI: Filtered Category→Zones→Devices tree
+// ==========================
+
+router.get("/user-tree", requireAuth, async (req, res) => {
+    const result = await appService.getUserTree(req.user);
+    return res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
+});
+
+
 export default router;

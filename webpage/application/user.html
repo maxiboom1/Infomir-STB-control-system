@@ -2,79 +2,121 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>MAG Control</title>
   <link rel="stylesheet" href="/assets/user.css">
 </head>
 <body>
-  <header class="header">
-    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
-      <div>
-        <h1>MAG Control</h1>
-        <p class="subtitle">Pick a device, then send commands.</p>
-      </div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-title">MAG Control</div>
+      <div id="crumb" class="crumb">Loading…</div>
+    </div>
+
+    <div class="actions">
+      <button id="btn-back" class="btn btn-ghost" disabled>Back</button>
       <button id="btn-logout" class="btn">Logout</button>
     </div>
   </header>
 
-  <main class="layout">
-    <!-- CONTROL AREA -->
-    <section class="card">
-      <div class="card-header">
-        <h2>Control</h2>
-      </div>
+  <main id="main" class="main" role="main">
+    <div id="grid" class="grid" aria-live="polite"></div>
 
-      <div class="row">
-        <label class="label" for="device-select">Device</label>
-        <select id="device-select" class="select"></select>
-        <button id="btn-reload" class="btn">Reload</button>
-      </div>
-
-      <div id="keypad" class="keypad">
-        <div class="keys-grid grid-10">
-          <button class="btn key" data-cmd="1">1</button>
-          <button class="btn key" data-cmd="2">2</button>
-          <button class="btn key" data-cmd="3">3</button>
-          <button class="btn key" data-cmd="4">4</button>
-          <button class="btn key" data-cmd="5">5</button>
-          <button class="btn key" data-cmd="6">6</button>
-          <button class="btn key" data-cmd="7">7</button>
-          <button class="btn key" data-cmd="8">8</button>
-          <button class="btn key" data-cmd="9">9</button>
-          <button class="btn key" data-cmd="0">0</button>
-        </div>
-
-        <div class="keys-grid grid-2">
-          <button class="btn key" data-cmd="CH_PLUS">CH+</button>
-          <button class="btn key" data-cmd="CH_MINUS">CH-</button>
-        </div>
-
-        <div class="nav-pad" aria-label="Navigation">
-          <div></div>
-          <button class="btn key" data-cmd="UP" title="UP">↑</button>
-          <div></div>
-
-          <button class="btn key" data-cmd="LEFT" title="LEFT">←</button>
-          <button class="btn key ok" data-cmd="OK" title="OK">OK</button>
-          <button class="btn key" data-cmd="RIGHT" title="RIGHT">→</button>
-
-          <div></div>
-          <button class="btn key" data-cmd="DOWN" title="DOWN">↓</button>
-          <div></div>
-        </div>
-
-        <div class="keys-grid grid-3">
-          <button class="btn key" data-cmd="RETURN">Return</button>
-          <button class="btn key" data-cmd="HOME">Home</button>
-          <button class="btn key" data-cmd="MENU">Menu</button>
-        </div>
-      </div>
-    </section>
+    <div id="empty" class="empty" hidden>
+      <div class="empty-title" id="empty-title">No access</div>
+      <div class="empty-sub" id="empty-sub">No zones assigned to your user. Please contact the system admin.</div>
+    </div>
   </main>
 
-  <footer class="footer">
-    <div id="status" class="status">Ready.</div>
-  </footer>
+  <!-- Keypad drawer (hidden until device selected) -->
+  <section id="drawer" class="drawer" aria-label="Keypad" data-open="false">
+    <div class="drawer-head">
+      <div class="drawer-meta">
+        <div id="drawer-title" class="drawer-title">No device selected</div>
+        <div id="drawer-sub" class="drawer-sub"></div>
+      </div>
+      <button id="btn-drawer-close" class="btn btn-ghost">Hide</button>
+    </div>
+
+    <div id="keypad" class="keypad">
+      <div class="pad-row">
+        <div class="pad-section">
+          <div class="section-title">Numbers</div>
+          <div class="keys-grid grid-10">
+            <button class="key" data-cmd="1">1</button>
+            <button class="key" data-cmd="2">2</button>
+            <button class="key" data-cmd="3">3</button>
+            <button class="key" data-cmd="4">4</button>
+            <button class="key" data-cmd="5">5</button>
+            <button class="key" data-cmd="6">6</button>
+            <button class="key" data-cmd="7">7</button>
+            <button class="key" data-cmd="8">8</button>
+            <button class="key" data-cmd="9">9</button>
+            <button class="key" data-cmd="0">0</button>
+          </div>
+        </div>
+
+        <div class="pad-section">
+          <div class="section-title">Volume / Channel</div>
+          <div class="keys-grid grid-2">
+            <button class="key" data-cmd="VOL_MINUS">VOL-</button>
+            <button class="key" data-cmd="VOL_PLUS">VOL+</button>
+          </div>
+          <div class="keys-grid grid-2">
+            <button class="key" data-cmd="CH_MINUS">CH-</button>
+            <button class="key" data-cmd="CH_PLUS">CH+</button>
+          </div>
+          <div class="keys-grid grid-2">
+            <button class="key" data-cmd="MUTE">MUTE</button>
+            <button class="key" data-cmd="INFO">INFO</button>
+          </div>
+        </div>
+
+        <div class="pad-section">
+          <div class="section-title">Navigation</div>
+          <div class="nav-pad" aria-label="Navigation pad">
+            <div></div>
+            <button class="key" data-cmd="UP" title="UP">↑</button>
+            <div></div>
+
+            <button class="key" data-cmd="LEFT" title="LEFT">←</button>
+            <button class="key ok" data-cmd="OK" title="OK">OK</button>
+            <button class="key" data-cmd="RIGHT" title="RIGHT">→</button>
+
+            <div></div>
+            <button class="key" data-cmd="DOWN" title="DOWN">↓</button>
+            <div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pad-row">
+        <div class="pad-section">
+          <div class="section-title">System</div>
+          <div class="keys-grid grid-4">
+            <button class="key" data-cmd="HOME">HOME</button>
+            <button class="key" data-cmd="MENU">MENU</button>
+            <button class="key" data-cmd="BACK">BACK</button>
+            <button class="key" data-cmd="EXIT">EXIT</button>
+          </div>
+        </div>
+
+        <div class="pad-section">
+          <div class="section-title">Colors</div>
+          <div class="keys-grid grid-4">
+            <button class="key color red" data-cmd="RED">RED</button>
+            <button class="key color green" data-cmd="GREEN">GREEN</button>
+            <button class="key color yellow" data-cmd="YELLOW">YELLOW</button>
+            <button class="key color blue" data-cmd="BLUE">BLUE</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="statusbar">
+        <div id="status" class="status">Ready.</div>
+      </div>
+    </div>
+  </section>
 
   <script src="/assets/user.js"></script>
 </body>

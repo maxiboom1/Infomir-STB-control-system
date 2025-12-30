@@ -324,7 +324,72 @@ class AppService {
         }
     }
     
-    /* =========================User commands to device========================= */
+    /* =========================User UI: Category → Zones → Devices tree========================= */
+
+    async getUserTree(user) {
+        try {
+            // JWT uses `uid` (see auth-service.signToken). Keep backward-compat if `id` exists.
+            const uid = Number(user?.uid ?? user?.id);
+            if (!Number.isInteger(uid) || uid <= 0) return { ok: false, status: 401, message: "Unauthorized" };
+
+            const isAdmin = (user?.role === "admin");
+            const rows = isAdmin
+                ? await sqlService.getUserTreeRowsForAdmin()
+                : await sqlService.getUserTreeRowsForUser(uid);
+
+            // Build tree
+            const catMap = new Map(); // catId -> { id, name, zones: [], _zoneMap }
+
+            for (const r of (rows || [])) {
+                const catId = r.category_id;
+                const catName = r.category_name;
+                const zoneId = r.zone_id;
+                const zoneName = r.zone_name;
+
+                if (!catMap.has(catId)) {
+                    catMap.set(catId, { id: catId, name: catName, zones: [], _zoneMap: new Map() });
+                }
+                const cat = catMap.get(catId);
+
+                if (!cat._zoneMap.has(zoneId)) {
+                    const zoneObj = { id: zoneId, name: zoneName, devices: [] };
+                    cat._zoneMap.set(zoneId, zoneObj);
+                    cat.zones.push(zoneObj);
+                }
+                const zone = cat._zoneMap.get(zoneId);
+
+                if (r.device_id) {
+                    zone.devices.push({
+                        id: r.device_id,
+                        name: r.device_name,
+                        ip: r.device_ip,
+                    });
+                }
+            }
+
+            // finalize (strip internal maps)
+            const categories = Array.from(catMap.values()).map(c => {
+                delete c._zoneMap;
+                return c;
+            });
+
+            // Sort zones/devices by name (defensive)
+            categories.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+            for (const c of categories) {
+                c.zones.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+                for (const z of c.zones) {
+                    z.devices.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+                }
+            }
+
+            return { ok: true, categories };
+        } catch (err) {
+            logger('[SERVICE] getUserTree error', err);
+            return { ok: false, status: 500, message: 'Failed to build user tree' };
+        }
+    }
+
+/* =========================User commands to device========================= */
 
     async sendCommand(deviceId, command) {
         try {

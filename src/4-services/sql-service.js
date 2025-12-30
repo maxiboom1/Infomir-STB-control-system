@@ -283,6 +283,51 @@ class SqlService {
     return result?.recordset?.[0]?.affected ?? 0;
   }
 
+
+
+  /* =========================USER UI TREE========================= */
+
+  async getUserTreeRowsForUser(userId) {
+    const sqlQuery = `
+      SELECT
+        c.id   AS category_id,
+        c.name AS category_name,
+        z.id   AS zone_id,
+        z.name AS zone_name,
+        d.id   AS device_id,
+        d.name AS device_name,
+        d.ip   AS device_ip
+      FROM dbo.[user_zones] uz
+      INNER JOIN dbo.[zones] z ON z.id = uz.zone_id
+      INNER JOIN dbo.[categories] c ON c.id = z.category_id
+      LEFT JOIN dbo.[devices] d ON d.zone_id = z.id
+      WHERE uz.user_id = @user_id
+      ORDER BY c.name, z.name, d.name;
+    `;
+
+    const result = await db.execute(sqlQuery, { user_id: userId });
+    return result?.recordset || [];
+  }
+
+  async getUserTreeRowsForAdmin() {
+    const sqlQuery = `
+      SELECT
+        c.id   AS category_id,
+        c.name AS category_name,
+        z.id   AS zone_id,
+        z.name AS zone_name,
+        d.id   AS device_id,
+        d.name AS device_name,
+        d.ip   AS device_ip
+      FROM dbo.[zones] z
+      INNER JOIN dbo.[categories] c ON c.id = z.category_id
+      LEFT JOIN dbo.[devices] d ON d.zone_id = z.id
+      ORDER BY c.name, z.name, d.name;
+    `;
+
+    const result = await db.execute(sqlQuery);
+    return result?.recordset || [];
+  }
   /* =========================USER_ZONES========================= */
 
   async getUserZones(userId) {

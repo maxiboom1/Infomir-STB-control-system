@@ -1,205 +1,316 @@
-const statusEl = document.getElementById("status");
-const selectEl = document.getElementById("device-select");
-const reloadBtn = document.getElementById("btn-reload");
-console.log("user")
-const logoutBtn = document.getElementById("btn-logout");
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    } finally {
-      window.location.href = "/login.html";
-    }
-  });
-}
-// --------------------
-// Control buttons
-// --------------------
-const keypad = document.getElementById("keypad");
+/* MAG Control — Regular User UI (v0.8.0)
+   Flow: Categories → Zones → Devices tiles + keypad drawer
+*/
 
-keypad.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-cmd]");
-    if (!btn) return;
-    send(btn.dataset.cmd);
+const elGrid = document.getElementById("grid");
+const elEmpty = document.getElementById("empty");
+const elEmptyTitle = document.getElementById("empty-title");
+const elEmptySub = document.getElementById("empty-sub");
+const elCrumb = document.getElementById("crumb");
+const btnBack = document.getElementById("btn-back");
+const btnLogout = document.getElementById("btn-logout");
+const elDrawer = document.getElementById("drawer");
+const btnDrawerClose = document.getElementById("btn-drawer-close");
+const elDrawerTitle = document.getElementById("drawer-title");
+const elDrawerSub = document.getElementById("drawer-sub");
+const elStatus = document.getElementById("status");
+const elKeypad = document.getElementById("keypad");
+
+const state = {
+  tree: null,
+  view: "categories", // categories | zones | devices
+  selectedCategoryId: null,
+  selectedZoneId: null,
+  selectedDeviceId: null,
+};
+
+function setStatus(msg, isError = false) {
+  if (!elStatus) return;
+  elStatus.textContent = msg || "";
+  elStatus.style.color = isError ? "#ff3b30" : "";
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[c]));
+}
+
+async function api(path, options) {
+  const res = await fetch(path, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    window.location.href = "/login.html";
+    return null;
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data?.message || `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+function openDrawer(open) {
+  elDrawer.dataset.open = open ? "true" : "false";
+  document.body.dataset.drawer = open ? "open" : "closed";
+}
+
+function currentCategory() {
+  return state.tree?.categories?.find(c => c.id === state.selectedCategoryId) || null;
+}
+
+function currentZone() {
+  const cat = currentCategory();
+  return cat?.zones?.find(z => z.id === state.selectedZoneId) || null;
+}
+
+function currentDevice() {
+  const zone = currentZone();
+  return zone?.devices?.find(d => d.id === state.selectedDeviceId) || null;
+}
+
+function setView(view) {
+  state.view = view;
+  render();
+}
+
+function buildCrumb() {
+  const parts = ["Categories"];
+  const cat = currentCategory();
+  if (cat) parts.push(cat.name);
+  const zone = currentZone();
+  if (zone) parts.push(zone.name);
+  elCrumb.textContent = parts.join(" / ");
+
+  // Back button rules
+  btnBack.disabled = (state.view === "categories");
+}
+
+function showEmpty(title, sub) {
+  elGrid.innerHTML = "";
+  elEmptyTitle.textContent = title || "Empty";
+  elEmptySub.textContent = sub || "";
+  elEmpty.hidden = false;
+}
+
+function hideEmpty() {
+  elEmpty.hidden = true;
+}
+
+function renderTiles(items, type) {
+  // type: category | zone | device
+  const selectedId = type === "category"
+    ? state.selectedCategoryId
+    : type === "zone"
+      ? state.selectedZoneId
+      : state.selectedDeviceId;
+
+  elGrid.innerHTML = items.map(item => {
+    const isSelected = item.id === selectedId;
+    const cls = ["tile", `tile--${type}`, isSelected ? "is-selected" : ""].filter(Boolean).join(" ");
+    const sub = (type === "device") ? (item.ip ? escapeHtml(item.ip) : "") : "";
+
+    return `
+      <button class="${cls}" data-type="${type}" data-id="${item.id}">
+        <div class="tile-title">${escapeHtml(item.name)}</div>
+        ${sub ? `<div class="tile-sub">${sub}</div>` : ``}
+      </button>
+    `;
+  }).join("");
+}
+
+function render() {
+  buildCrumb();
+
+  if (!state.tree) {
+    showEmpty("Loading…", "");
+    return;
+  }
+
+  const categories = state.tree.categories || [];
+
+  // no access
+  if (!categories.length) {
+    showEmpty(
+      "No zones assigned",
+      "Please contact the system admin to assign zones to your user."
+    );
+    openDrawer(false);
+    return;
+  }
+
+  hideEmpty();
+
+  if (state.view === "categories") {
+    // Drawer should be hidden on categories
+    openDrawer(false);
+    state.selectedZoneId = null;
+    state.selectedDeviceId = null;
+    renderTiles(categories, "category");
+    return;
+  }
+
+  if (state.view === "zones") {
+    openDrawer(false);
+    state.selectedDeviceId = null;
+
+    const cat = currentCategory();
+    if (!cat) {
+      // fallback
+      state.selectedCategoryId = categories[0].id;
+      return render();
+    }
+
+    renderTiles(cat.zones || [], "zone");
+    return;
+  }
+
+  if (state.view === "devices") {
+    const zone = currentZone();
+    if (!zone) {
+      // fallback
+      setView("zones");
+      return;
+    }
+
+    renderTiles(zone.devices || [], "device");
+
+    // Drawer shows only when a device is selected
+    const dev = currentDevice();
+    if (!dev) {
+      elDrawerTitle.textContent = "Select a device";
+      elDrawerSub.textContent = "";
+      openDrawer(false);
+      return;
+    }
+
+    elDrawerTitle.textContent = dev.name;
+    elDrawerSub.textContent = `${currentCategory()?.name || ""} / ${zone.name}`;
+    openDrawer(true);
+    return;
+  }
+}
+
+async function loadTree() {
+  setStatus("Loading…");
+  const data = await api("/api/user-tree");
+  if (!data) return;
+
+  state.tree = data.categories ? data : { categories: [] };
+
+  // Decide initial view:
+  // If only 1 category → skip categories and show zones directly (even if only one zone)
+  if (state.tree.categories?.length === 1) {
+    state.selectedCategoryId = state.tree.categories[0].id;
+    state.view = "zones";
+  } else {
+    state.view = "categories";
+  }
+
+  setStatus("Ready");
+  render();
+}
+
+async function sendCommand(cmd) {
+  const dev = currentDevice();
+  if (!dev) return;
+
+  try {
+    setStatus(`Sending ${cmd}…`);
+    const res = await api("/api/send", {
+      method: "POST",
+      body: JSON.stringify({ deviceId: dev.id, command: cmd }),
+    });
+    setStatus(res?.message || `Sent ${cmd}`);
+  } catch (err) {
+    setStatus(err.message || "Send failed", true);
+  }
+}
+
+// ----------------------
+// Events
+// ----------------------
+
+btnLogout?.addEventListener("click", async () => {
+  try {
+    await api("/api/auth/logout", { method: "POST" });
+  } catch {
+    // ignore
+  }
+  window.location.href = "/login.html";
 });
 
-async function send(command) {
-    const deviceId = Number(selectEl?.value);
-    if (!deviceId) {
-        statusEl.textContent = "Please select a device first.";
-        return;
-    }
+btnBack?.addEventListener("click", () => {
+  if (state.view === "devices") {
+    state.selectedDeviceId = null;
+    openDrawer(false);
+    setView("zones");
+    return;
+  }
+  if (state.view === "zones") {
+    // If only one category exists, keep user in zones view (no point to go back)
+    if (state.tree?.categories?.length === 1) return;
 
-    try {
-        statusEl.textContent = `Sending ${command} to device #${deviceId}...`;
+    state.selectedCategoryId = null;
+    state.selectedZoneId = null;
+    setView("categories");
+    return;
+  }
+});
 
-        const res = await fetch("/api/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ deviceId, command }),
-        });
+btnDrawerClose?.addEventListener("click", () => {
+  openDrawer(false);
+});
 
-        let data = null;
-        try { data = await res.json(); } catch (_) { }
+elGrid?.addEventListener("click", (e) => {
+  const btn = e.target?.closest?.("button.tile");
+  if (!btn) return;
+  const type = btn.dataset.type;
+  const id = Number(btn.dataset.id);
 
-        if (!res.ok) {
-            statusEl.textContent = data?.message || `Error sending ${command} (HTTP ${res.status})`;
-            return;
-        }
+  if (type === "category") {
+    state.selectedCategoryId = id;
+    state.selectedZoneId = null;
+    state.selectedDeviceId = null;
+    setView("zones");
+    return;
+  }
 
-        statusEl.textContent = data?.message || `Sent ${command} to device #${deviceId}.`;
-    } catch (e) {
-        statusEl.textContent = `Error sending ${command}: ${e.message}`;
-    }
-}
+  if (type === "zone") {
+    state.selectedZoneId = id;
+    state.selectedDeviceId = null;
+    setView("devices");
+    return;
+  }
 
-// --------------------
-// Devices dropdown
-// --------------------
-async function loadDevices() {
-    selectEl.innerHTML = "<option>Loading...</option>";
+  if (type === "device") {
+    state.selectedDeviceId = id;
+    render();
+    return;
+  }
+});
 
-    try {
-        const res = await fetch("/api/get-devices");
-        const data = await res.json();
-        const devices = data.devices || data; // supports both {devices:[]} or []
+// keypad
+elKeypad?.addEventListener("click", (e) => {
+  const btn = e.target?.closest?.("button.key");
+  if (!btn) return;
+  const cmd = btn.dataset.cmd;
+  if (!cmd) return;
+  sendCommand(cmd);
+});
 
-        selectEl.innerHTML = "";
-
-        if (!devices || devices.length === 0) {
-            selectEl.innerHTML = "<option value=''>No devices</option>";
-            return;
-        }
-
-        for (const d of devices) {
-            const opt = document.createElement("option");
-            opt.value = d.id;
-            opt.textContent = d.name;
-            selectEl.appendChild(opt);
-        }
-    } catch (e) {
-        selectEl.innerHTML = "<option value=''>Error loading devices</option>";
-    }
-}
-
-reloadBtn.addEventListener("click", () => loadDevices());
-
-// --------------------
-// Admin: Add device
-// --------------------
-const addNameEl = document.getElementById("add-name");
-const addIpEl = document.getElementById("add-ip");
-const addCategoryEl = document.getElementById("add-category");
-const addZoneEl = document.getElementById("add-zone");
-const addBtn = document.getElementById("btn-add-device");
-
-function setSelectPlaceholder(select, text) {
-    select.innerHTML = "";
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = text;
-    select.appendChild(opt);
-}
-
-function fillSelect(select, items, { valueKey = "id", labelKey = "name", firstLabel = "Select..." } = {}) {
-    select.innerHTML = "";
-
-    const first = document.createElement("option");
-    first.value = "";
-    first.textContent = firstLabel;
-    select.appendChild(first);
-
-    for (const item of items) {
-        const opt = document.createElement("option");
-        opt.value = item[valueKey];
-        opt.textContent = item[labelKey];
-        select.appendChild(opt);
-    }
-}
-
-async function loadCategories() {
-    // POC-friendly: if endpoint doesn't exist, keep UI usable
-    setSelectPlaceholder(addCategoryEl, "Loading...");
-
-    try {
-        const res = await fetch("/api/get-categories");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const categories = data.categories || data;
-
-        if (!Array.isArray(categories) || categories.length === 0) {
-            setSelectPlaceholder(addCategoryEl, "No categories");
-            return;
-        }
-
-        fillSelect(addCategoryEl, categories, { firstLabel: "Select category..." });
-    } catch (_) {
-        // Endpoint may not exist yet in your POC
-        setSelectPlaceholder(addCategoryEl, "N/A (POC)");
-    }
-}
-
-async function loadZones() {
-    setSelectPlaceholder(addZoneEl, "Loading...");
-
-    try {
-        const res = await fetch("/api/get-zones");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const zones = data.zones || data;
-
-        if (!Array.isArray(zones) || zones.length === 0) {
-            setSelectPlaceholder(addZoneEl, "No zones");
-            return;
-        }
-
-        fillSelect(addZoneEl, zones, { firstLabel: "Select zone..." });
-    } catch (_) {
-        setSelectPlaceholder(addZoneEl, "N/A (POC)");
-    }
-}
-
-addBtn.addEventListener("click", async () => {
-    const name = addNameEl.value.trim();
-    const ip = addIpEl.value.trim();
-    const category = addCategoryEl.value || null;
-    const zone = addZoneEl.value || null;
-  
-    if (!name) return (statusEl.textContent = "Please enter device name.");
-    if (!ip) return (statusEl.textContent = "Please enter device IP.");
-  
-    try {
-      statusEl.textContent = "Adding device...";
-  
-      const res = await fetch("/api/add-device", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, ip, category, zone }),
-      });
-  
-      const data = await res.json().catch(() => null);
-  
-      // Works whether backend uses HTTP error codes OR always 200 with ok:false
-      const ok = (res.ok && data?.ok !== false) || data?.ok === true;
-  
-      if (!ok) {
-        statusEl.textContent = data?.message || `Add device failed (HTTP ${res.status})`;
-        return;
-      }
-  
-      statusEl.textContent = data?.message || "Device added.";
-      addNameEl.value = "";
-      addIpEl.value = "";
-  
-      await loadDevices();
-    } catch (e) {
-      statusEl.textContent = `Error adding device: ${e.message}`;
-    }
-  });
-  
-
-window.addEventListener("DOMContentLoaded", async () => {
-    await loadDevices();
-    await loadCategories();
-    await loadZones();
+// Init
+loadTree().catch(err => {
+  showEmpty("Error", err.message || "Failed to load data");
+  setStatus(err.message || "Failed to load", true);
 });
