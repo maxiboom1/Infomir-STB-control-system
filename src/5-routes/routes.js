@@ -16,7 +16,6 @@ router.post("/send", requireAuth, async (req, res) => {
     res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
 });
 
-
 router.get("/get-devices", requireAuth, async (req, res) => {
     const devices = await appService.getAllStb();
     res.json({ ok: true, devices });
