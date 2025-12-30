@@ -19,14 +19,12 @@ class SqlService {
         };
 
         const sqlQuery = `
-      INSERT INTO dbo.[devices] (name, ip, category_id, zone_id, isOnline, tag, label)
-      OUTPUT inserted.id
-      VALUES (@name, @ip, @category_id, @zone_id, @isOnline, @tag, @label);
-    `;
-
+            INSERT INTO dbo.[devices] (name, ip, category_id, zone_id, isOnline, tag, label)
+            OUTPUT inserted.id
+            VALUES (@name, @ip, @category_id, @zone_id, @isOnline, @tag, @label);
+        `;
         const result = await db.execute(sqlQuery, values);
         const assertedId = result?.recordset?.[0]?.id;
-
         logger(`[SQL] Registering new device: {${device.name}}, on {${device.ip}}`);
         return assertedId;
     }
@@ -39,12 +37,71 @@ class SqlService {
 
     async getDeviceById(id) {
         const sqlQuery = `
-      SELECT id, name, ip, category_id, zone_id, isOnline, tag, label
-      FROM dbo.[devices]
-      WHERE id = @id;
-    `;
+            SELECT id, name, ip, category_id, zone_id, isOnline, tag, label
+            FROM dbo.[devices]
+            WHERE id = @id;
+            `;
         const result = await db.execute(sqlQuery, { id });
         return result?.recordset?.[0] || null;
+    }
+
+    async updateDevice(id, patch) {
+        // patch: { name?, ip?, categoryId?, zoneId?, isOnline?, tag?, label? }
+        const values = {
+            id,
+            name: patch.name ?? null,
+            ip: patch.ip ?? null,
+            category_id: patch.categoryId ?? null,
+            zone_id: patch.zoneId ?? null,
+            isOnline: patch.isOnline ?? null,
+            tag: patch.tag ?? null,
+            label: patch.label ?? null,
+        };
+
+        const sqlQuery = `
+          UPDATE dbo.[devices]
+          SET
+            name        = COALESCE(@name, name),
+            ip          = COALESCE(@ip, ip),
+            category_id = COALESCE(@category_id, category_id),
+            zone_id     = COALESCE(@zone_id, zone_id),
+            isOnline    = COALESCE(@isOnline, isOnline),
+            tag         = COALESCE(@tag, tag),
+            label       = COALESCE(@label, label)
+          WHERE id = @id;
+    
+          SELECT @@ROWCOUNT AS affected;
+        `;
+
+        const result = await db.execute(sqlQuery, values);
+        return result?.recordset?.[0]?.affected ?? 0;
+    }
+
+    async deleteDevice(id) {
+        const sqlQuery = `
+            DELETE FROM dbo.[devices]
+            WHERE id = @id;
+
+            SELECT @@ROWCOUNT AS affected;
+        `;
+        const result = await db.execute(sqlQuery, { id });
+        return result?.recordset?.[0]?.affected ?? 0;
+    }
+
+    async getAllDevicesDetailed() {
+        // useful for admin devices table later
+        const sqlQuery = `
+            SELECT
+            d.id, d.name, d.ip, d.zone_id, z.name AS zone_name,
+            d.category_id, c.name AS category_name,
+            d.isOnline, d.tag, d.label
+            FROM dbo.[devices] d
+            INNER JOIN dbo.[zones] z ON z.id = d.zone_id
+            INNER JOIN dbo.[categories] c ON c.id = d.category_id
+            ORDER BY c.name, z.name, d.name;
+        `;
+        const result = await db.execute(sqlQuery);
+        return result?.recordset || [];
     }
 
     /* =========================CATEGORIES========================= */
@@ -55,23 +112,25 @@ class SqlService {
         return result?.recordset || [];
     }
 
+
+
     async createCategory(name) {
         const sqlQuery = `
-      INSERT INTO dbo.[categories] (name)
-      OUTPUT inserted.id
-      VALUES (@name);
-    `;
+            INSERT INTO dbo.[categories] (name)
+            OUTPUT inserted.id
+            VALUES (@name);
+            `;
         const result = await db.execute(sqlQuery, { name });
         return result?.recordset?.[0]?.id;
     }
 
     async updateCategory(id, name) {
         const sqlQuery = `
-      UPDATE dbo.[categories]
-      SET name = @name
-      WHERE id = @id;
-      SELECT @@ROWCOUNT AS affected;
-    `;
+            UPDATE dbo.[categories]
+            SET name = @name
+            WHERE id = @id;
+            SELECT @@ROWCOUNT AS affected;
+            `;
         const result = await db.execute(sqlQuery, { id, name });
         return result?.recordset?.[0]?.affected ?? 0;
     }
