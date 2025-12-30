@@ -1,8 +1,7 @@
-Version: v0.6-m1
+Version: v0.6.1
 Date: 2025-12-29
 Done:
-- Auth + role gating
-- Admin HTML skeleton
+- Refactor: Auth service added - and auth.js only handel routes and link to service
 Next:
 - Zones/Categories CRUD backend
 Notes:
