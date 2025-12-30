@@ -21,6 +21,14 @@ export function initDevicesTab(shared) {
     selectedDeviceId: null,
   };
 
+  // Ip validator
+  function isValidIPv4(ip) {
+    // Strict IPv4 (no letters / hostnames).
+    // 0-255 in each octet. Rejects leading zeros like 001.
+    const re = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+    return re.test(String(ip || "").trim());
+  }
+
   function groupZonesByCategory(zones) {
     const map = new Map();
     for (const z of zones || []) {
@@ -232,6 +240,7 @@ export function initDevicesTab(shared) {
       if (!state.zones.length) return setHint(note, "Create a zone first", true);
       if (!name) return setHint(note, "Name is required", true);
       if (!ip) return setHint(note, "IP is required", true);
+      if (!isValidIPv4(ip)) return setHint(note, "Invalid IP (IPv4 only)", true);
       if (!Number.isInteger(zoneId) || zoneId <= 0) return setHint(note, "Zone is required", true);
 
       setHint(note, "Adding...");
@@ -256,6 +265,7 @@ export function initDevicesTab(shared) {
       if (!state.zones.length) return setStatus("Create a zone first");
       if (!name) return setStatus("Name is required");
       if (!ip) return setStatus("IP is required");
+      if (!isValidIPv4(ip)) return setStatus("Invalid IP (IPv4 only)");
       if (!Number.isInteger(zoneId) || zoneId <= 0) return setStatus("Zone is required");
 
       setStatus("Saving device...");
