@@ -31,9 +31,7 @@
   <!-- Keypad drawer (hidden until device selected) -->
   <section id="drawer" class="drawer" aria-label="Keypad" data-open="false">
     <div class="drawer-head">
-      <button class="key key-power" data-cmd="POWER" title="Power" aria-label="Power">
-        <span class="icon-power">⏻</span>
-      </button>
+      <button class="key key-power" data-cmd="POWER" title="Power" aria-label="Power">POWER</button>
       <div class="drawer-meta">
         <div id="drawer-title" class="drawer-title">No device selected</div>
         <div id="drawer-sub" class="drawer-sub"></div>
@@ -42,72 +40,72 @@
     </div>
 
     <div id="keypad" class="keypad">
-      <div class="remote" aria-label="Remote keypad">
-        <!-- Numbers (1-9) -->
-        <div class="remote-numgrid" aria-label="Numbers">
-          <button class="key rbtn rbtn-num" data-cmd="1">1</button>
-          <button class="key rbtn rbtn-num" data-cmd="2">2</button>
-          <button class="key rbtn rbtn-num" data-cmd="3">3</button>
+      <div class="kp" aria-label="Remote keypad">
 
-          <button class="key rbtn rbtn-num" data-cmd="4">4</button>
-          <button class="key rbtn rbtn-num" data-cmd="5">5</button>
-          <button class="key rbtn rbtn-num" data-cmd="6">6</button>
-
-          <button class="key rbtn rbtn-num" data-cmd="7">7</button>
-          <button class="key rbtn rbtn-num" data-cmd="8">8</button>
-          <button class="key rbtn rbtn-num" data-cmd="9">9</button>
-        </div>
-
-        <!-- Row for 0 (like MagicRemote layout). ABC/transport are ignored. -->
-        <div class="remote-row remote-row-0" aria-label="Zero row">
-          <div class="remote-spacer" aria-hidden="true"></div>
-          <button class="key rbtn rbtn-num" data-cmd="0">0</button>
-          <div class="remote-spacer" aria-hidden="true"></div>
-        </div>
-
-        <!-- Mid section: VOL | D-PAD | CH -->
-        <div class="remote-mid">
-          <div class="remote-pill" aria-label="Volume">
-            <button class="key rbtn rbtn-pill" data-cmd="VOL_PLUS" aria-label="Volume up">+</button>
-            <div class="pill-label">VOL</div>
-            <button class="key rbtn rbtn-pill" data-cmd="VOL_MINUS" aria-label="Volume down">−</button>
-          </div>
-
-          <div class="dpad" aria-label="Navigation">
-            <button class="key rbtn rbtn-dir up" data-cmd="UP" aria-label="Up">▲</button>
-            <button class="key rbtn rbtn-dir left" data-cmd="LEFT" aria-label="Left">◀</button>
-            <button class="key rbtn rbtn-ok" data-cmd="OK" aria-label="OK">OK</button>
-            <button class="key rbtn rbtn-dir right" data-cmd="RIGHT" aria-label="Right">▶</button>
-            <button class="key rbtn rbtn-dir down" data-cmd="DOWN" aria-label="Down">▼</button>
-          </div>
-
-          <div class="remote-pill" aria-label="Channel">
-            <button class="key rbtn rbtn-pill" data-cmd="CH_PLUS" aria-label="Channel up">▲</button>
-            <div class="pill-label">CH</div>
-            <button class="key rbtn rbtn-pill" data-cmd="CH_MINUS" aria-label="Channel down">▼</button>
+        <div class="kp-section" aria-label="Numbers">
+          <div class="kp-grid kp-grid-3">
+            <button class="key kp-btn" data-cmd="1">1</button>
+            <button class="key kp-btn" data-cmd="2">2</button>
+            <button class="key kp-btn" data-cmd="3">3</button>
+            <button class="key kp-btn" data-cmd="4">4</button>
+            <button class="key kp-btn" data-cmd="5">5</button>
+            <button class="key kp-btn" data-cmd="6">6</button>
+            <button class="key kp-btn" data-cmd="7">7</button>
+            <button class="key kp-btn" data-cmd="8">8</button>
+            <button class="key kp-btn" data-cmd="9">9</button>
+            <div></div>
+            <button class="key kp-btn" data-cmd="0">0</button>
+            <div></div>
           </div>
         </div>
 
-        <!-- Bottom system keys (like MagicRemote) -->
-        <div class="remote-row remote-row-sys" aria-label="System keys">
-          <button class="key rbtn rbtn-sys" data-cmd="MUTE" aria-label="Mute">🔇</button>
-          <button class="key rbtn rbtn-sys" data-cmd="BACK" aria-label="Back">↩</button>
-          <button class="key rbtn rbtn-sys" data-cmd="HOME" aria-label="Home">⌂</button>
-          <button class="key rbtn rbtn-sys" data-cmd="INFO" aria-label="Info">i</button>
-          <button class="key rbtn rbtn-sys" data-cmd="MENU" aria-label="Menu">≡</button>
+        <div class="kp-section" aria-label="Navigation">
+          <div class="kp-nav">
+            <div class="kp-col">
+              <button class="key kp-btn" data-cmd="VOL_PLUS">VOL+</button>
+              <button class="key kp-btn" data-cmd="VOL_MINUS">VOL-</button>
+            </div>
+
+            <div class="kp-dpad">
+              <button class="key kp-btn kp-big" data-cmd="UP">UP</button>
+              <div class="kp-dpad-row">
+                <button class="key kp-btn kp-big" data-cmd="LEFT">LEFT</button>
+                <button class="key kp-btn kp-big" data-cmd="OK">OK</button>
+                <button class="key kp-btn kp-big" data-cmd="RIGHT">RIGHT</button>
+              </div>
+              <button class="key kp-btn kp-big" data-cmd="DOWN">DOWN</button>
+            </div>
+
+            <div class="kp-col">
+              <button class="key kp-btn" data-cmd="CH_PLUS">CH+</button>
+              <button class="key kp-btn" data-cmd="CH_MINUS">CH-</button>
+            </div>
+          </div>
         </div>
 
-        <!-- Colors instead of transport buttons -->
-        <div class="remote-row remote-row-colors" aria-label="Color keys">
-          <button class="key rbtn rbtn-color red" data-cmd="RED" aria-label="Red"></button>
-          <button class="key rbtn rbtn-color green" data-cmd="GREEN" aria-label="Green"></button>
-          <button class="key rbtn rbtn-color yellow" data-cmd="YELLOW" aria-label="Yellow"></button>
-          <button class="key rbtn rbtn-color blue" data-cmd="BLUE" aria-label="Blue"></button>
+        <div class="kp-section" aria-label="System keys">
+          <div class="kp-grid kp-grid-5">
+            <button class="key kp-btn" data-cmd="MUTE">MUTE</button>
+            <button class="key kp-btn" data-cmd="BACK">BACK</button>
+            <button class="key kp-btn" data-cmd="HOME">HOME</button>
+            <button class="key kp-btn" data-cmd="INFO">INFO</button>
+            <button class="key kp-btn" data-cmd="MENU">MENU</button>
+          </div>
+        </div>
+
+        <div class="kp-section" aria-label="Color keys">
+          <div class="kp-grid kp-grid-4">
+            <button class="key kp-btn kp-color red" data-cmd="RED">RED</button>
+            <button class="key kp-btn kp-color green" data-cmd="GREEN">GREEN</button>
+            <button class="key kp-btn kp-color yellow" data-cmd="YELLOW">YELLOW</button>
+            <button class="key kp-btn kp-color blue" data-cmd="BLUE">BLUE</button>
+          </div>
         </div>
 
         <div class="statusbar">
           <div id="status" class="status">Ready.</div>
         </div>
+
       </div>
     </div>
   </section>
