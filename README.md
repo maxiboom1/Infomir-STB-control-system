@@ -2,6 +2,7 @@
 
 ### 1) Project Purpose
 **Problem description:** Building has 150 STB's. part of them located near each other. When controlling from RC, It affects neigbord STB. Other case is when STB placed behind in-wall mounted screens. RC cannot reach the correct STB.
+
 **Solution:** Build a centralized web-based system that enables management and remote control of up to ~200 set-top boxes (STBs) (typical deployment ~150) from a single dashboard using sendqtevent utility via SSH that available only on MAG public firmware, allowing direct key injection using sendqtevent. The system will provide robust managment system, including users and permissions, device (STB's), categories and zones. In background - we store data in MSSQL, so system snapshot can be exported from there.
 
 ---
