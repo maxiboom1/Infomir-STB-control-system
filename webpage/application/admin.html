@@ -14,7 +14,7 @@
 
   <div class="admin-shell">
 
-    <!-- LEFT NAV TAB-->
+    <!-- LEFT NAV -->
     <aside class="admin-nav">
       <div class="brand">
         <div class="brand-title">MAG Control</div>
@@ -61,7 +61,7 @@
           </section>
 
           <!-- Right actions -->
-          <section class="pane">
+          <section class="pane pane-scroll">
 
             <div class="section">
               <div class="section-title">Add device</div>
@@ -122,9 +122,9 @@
         </div>
       </section>
 
+      
       <!-- =========================
            TAB: CATEGORIES & ZONES
-           (placeholder skeleton for now)
            ========================= -->
       <section class="tab-panel" data-panel="catzones" style="display:none;">
         <div class="page-header">
@@ -132,25 +132,267 @@
           <div class="page-hint">Create categories, create zones, and assign zones to categories.</div>
         </div>
 
-        <div class="pane">
-          <div class="section-title">Coming next</div>
-          <div class="hint">We will build this tab with the same segmented layout style.</div>
+        <div class="split-3">
+
+          <!-- Categories list -->
+          <section class="pane">
+            <div class="pane-head">
+              <div class="pane-head-top">
+                <div class="pane-title">Categories</div>
+                <div id="cat-selected-mini" class="badge">All</div>
+              </div>
+              <input id="cat-search" class="input" type="text" placeholder="Search..." />
+            </div>
+
+            <div id="cat-list" class="vlist" role="listbox" aria-label="Categories"></div>
+
+            <div class="pane-foot">
+              <button id="btn-cat-reload" class="btn">Refresh</button>
+            </div>
+          </section>
+
+          <!-- Zones list -->
+          <section class="pane">
+            <div class="pane-head">
+              <div class="pane-head-top">
+                <div class="pane-title">Zones</div>
+                <div id="zone-filter-badge" class="badge">Category: All</div>
+              </div>
+              <input id="zone-search" class="input" type="text" placeholder="Search..." />
+            </div>
+
+            <div id="zone-list" class="vlist" role="listbox" aria-label="Zones"></div>
+
+            <div class="pane-foot">
+              <button id="btn-zone-reload" class="btn">Refresh</button>
+            </div>
+          </section>
+
+          <!-- Actions -->
+          <section class="pane pane-scroll">
+
+            <div class="section">
+              <div class="section-title">Add category</div>
+
+              <div class="form-row">
+                <label class="label" for="cat-add-name">Name</label>
+                <input id="cat-add-name" class="input" type="text" placeholder="e.g. Sports" />
+              </div>
+
+              <div class="actions">
+                <button id="btn-cat-add" class="btn">Add</button>
+                <div id="cat-add-note" class="hint"></div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section">
+              <div class="section-title">Edit selected category</div>
+
+              <div class="form-row">
+                <label class="label">Selected</label>
+                <div id="cat-selected" class="badge">None</div>
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="cat-edit-name">Name</label>
+                <input id="cat-edit-name" class="input" type="text" />
+              </div>
+
+              <div class="actions">
+                <button id="btn-cat-save" class="btn">Save</button>
+                <button id="btn-cat-delete" class="btn danger">Delete</button>
+              </div>
+
+              <div id="cat-edit-note" class="hint"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section">
+              <div class="section-title">Add zone</div>
+
+              <div class="form-row">
+                <label class="label" for="zone-add-name">Name</label>
+                <input id="zone-add-name" class="input" type="text" placeholder="e.g. Studio A" />
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="zone-add-category">Category</label>
+                <select id="zone-add-category" class="select"></select>
+              </div>
+
+              <div class="actions">
+                <button id="btn-zone-add" class="btn">Add</button>
+                <div id="zone-add-note" class="hint"></div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section">
+              <div class="section-title">Edit selected zone</div>
+
+              <div class="form-row">
+                <label class="label">Selected</label>
+                <div id="zone-selected" class="badge">None</div>
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="zone-edit-name">Name</label>
+                <input id="zone-edit-name" class="input" type="text" />
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="zone-edit-category">Category</label>
+                <select id="zone-edit-category" class="select"></select>
+              </div>
+
+              <div class="actions">
+                <button id="btn-zone-save" class="btn">Save</button>
+                <button id="btn-zone-delete" class="btn danger">Delete</button>
+              </div>
+
+              <div id="zone-edit-note" class="hint"></div>
+            </div>
+
+          </section>
         </div>
       </section>
 
+      
       <!-- =========================
            TAB: USERS
-           (placeholder skeleton for now)
            ========================= -->
       <section class="tab-panel" data-panel="users" style="display:none;">
         <div class="page-header">
           <h1>Users</h1>
-          <div class="page-hint">Create users and assign zones.</div>
+          <div class="page-hint">Create users and assign zones (permissions) per user.</div>
         </div>
 
-        <div class="pane">
-          <div class="section-title">Coming next</div>
-          <div class="hint">We will implement a dual-list selector for zone assignment.</div>
+        <div class="split-2">
+
+          <!-- Users list -->
+          <section class="pane">
+            <div class="pane-head">
+              <div class="pane-title">User list</div>
+              <input id="user-search" class="input" type="text" placeholder="Search..." />
+            </div>
+
+            <div id="user-list" class="vlist" role="listbox" aria-label="Users"></div>
+
+            <div class="pane-foot">
+              <button id="btn-user-reload" class="btn">Refresh</button>
+            </div>
+          </section>
+
+          <!-- Actions -->
+          <section class="pane pane-scroll">
+
+            <div class="section">
+              <div class="section-title">Add user</div>
+
+              <div class="form-row">
+                <label class="label" for="user-add-username">Username</label>
+                <input id="user-add-username" class="input" type="text" placeholder="e.g. operator1" />
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="user-add-password">Password</label>
+                <input id="user-add-password" class="input" type="password" placeholder="Temporary password" />
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="user-add-role">Role</label>
+                <select id="user-add-role" class="select">
+                  <option value="operator" selected>operator</option>
+                  <option value="admin">admin</option>
+                </select>
+              </div>
+
+              <div class="actions">
+                <button id="btn-user-add" class="btn">Add</button>
+                <div id="user-add-note" class="hint"></div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section">
+              <div class="section-title">Edit selected user</div>
+
+              <div class="form-row">
+                <label class="label">Selected</label>
+                <div id="user-selected" class="badge">None</div>
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="user-edit-username">Username</label>
+                <input id="user-edit-username" class="input" type="text" />
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="user-edit-role">Role</label>
+                <select id="user-edit-role" class="select">
+                  <option value="operator">operator</option>
+                  <option value="admin">admin</option>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="user-edit-label">Label</label>
+                <input id="user-edit-label" class="input" type="text" placeholder="Optional" />
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="user-edit-tag">Tag</label>
+                <input id="user-edit-tag" class="input" type="text" placeholder="Optional" />
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="user-edit-password">Reset password</label>
+                <input id="user-edit-password" class="input" type="password" placeholder="Leave empty to keep current" />
+              </div>
+
+              <div class="actions">
+                <button id="btn-user-save" class="btn">Save</button>
+                <button id="btn-user-delete" class="btn danger">Delete</button>
+              </div>
+
+              <div id="user-edit-note" class="hint"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section">
+              <div class="section-title">Zone assignment</div>
+              <div class="hint">Select a user, then move zones between lists. Save to apply permissions.</div>
+
+              <div class="assign-grid">
+                <div>
+                  <div class="section-subtitle">Available zones</div>
+                  <div id="uz-available" class="vlist small" role="listbox" aria-label="Available zones"></div>
+                </div>
+
+                <div class="assign-actions">
+                  <button id="btn-uz-add" class="btn">&gt;&gt;</button>
+                  <button id="btn-uz-remove" class="btn">&lt;&lt;</button>
+                </div>
+
+                <div>
+                  <div class="section-subtitle">Assigned zones</div>
+                  <div id="uz-assigned" class="vlist small" role="listbox" aria-label="Assigned zones"></div>
+                </div>
+              </div>
+
+              <div class="actions">
+                <button id="btn-uz-save" class="btn">Save assignment</button>
+                <div id="uz-note" class="hint"></div>
+              </div>
+            </div>
+
+          </section>
         </div>
       </section>
 
