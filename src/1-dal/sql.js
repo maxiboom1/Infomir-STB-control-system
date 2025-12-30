@@ -24,30 +24,21 @@ const poolPromise = new sql.ConnectionPool(config)
     throw err;
   });
 
-// Your execute function:
-async function execute(sql, values) {
+async function execute(query, values) {
   try {
     const pool = await poolPromise;
-    
-    // Check if values are provided
-    if (values) {
-      const request = pool.request();
+    const request = pool.request();
 
-      // Loop through values and add them as parameters
+    if (values && typeof values === "object") {
       for (const key in values) {
-        if (values.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(values, key)) {
           request.input(key, values[key]);
         }
       }
-
-      // Execute query with parameters
-      const result = await request.query(sql);
-      return result;
-    } else {
-      // Execute query without parameters
-      const result = await pool.request().query(sql);
-      return result.recordset;
     }
+
+    const result = await request.query(query);
+    return result; // ALWAYS full result (has .recordset)
   } catch (err) {
     logger(`Error executing query: ${err}`, "red");
     throw err;

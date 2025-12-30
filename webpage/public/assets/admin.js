@@ -91,8 +91,10 @@ function setTab(tabName) {
 tabButtons.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
 
 const defaultTab = localStorage.getItem("adminTab") || "devices";
-setTab(defaultTab);
 
+document.addEventListener("DOMContentLoaded", () => {
+  setTab(defaultTab || "devices");
+});
 
 /* =========================
    Categories & Zones wiring

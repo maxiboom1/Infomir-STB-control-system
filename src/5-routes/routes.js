@@ -111,6 +111,7 @@ router.delete("/categories/:id", requireAuth, requireAdmin, async (req, res) => 
 
 router.get("/zones", requireAuth, requireAdmin, async (req, res) => {
     const result = await appService.getZones();
+
     if (!result.ok) {
         return res.status(result.status || 500).json(result);
     }
