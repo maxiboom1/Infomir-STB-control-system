@@ -52,10 +52,10 @@ class SqlService {
         const sqlQuery = `SELECT id, name, ip FROM device WHERE id = @id;`;
         const result = await db.execute(sqlQuery, { id });
         return result?.recordset?.[0] || null;
-      }
+    }
 
     async getUserByUsername(username) {
-        console.log(username);
+        
         const sqlQuery = `
             SELECT TOP 1 id, username, password, role
             FROM dbo.[users]
