@@ -7,4 +7,4 @@
     "jwtSecret": "The_great_rge_secret_key_323223",
     "jwtCookieName": "mag_auth",
     "jwtExpiresMinutes": 30
-} 
+}
