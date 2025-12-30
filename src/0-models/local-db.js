@@ -64,7 +64,7 @@ const constants = Object.freeze({
     STOP:       altSuffix + "83",
 
     // POWER appears as 85 (0x55) with ALT
-    POWER: altSuffix + "85",
+    POWER: altSuffix + "102",
     }),
 
 

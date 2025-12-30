@@ -11,6 +11,7 @@ const btnBack = document.getElementById("btn-back");
 const btnLogout = document.getElementById("btn-logout");
 const elDrawer = document.getElementById("drawer");
 const btnDrawerClose = document.getElementById("btn-drawer-close");
+const btnPower = document.querySelector(".key-power");
 const elDrawerTitle = document.getElementById("drawer-title");
 const elDrawerSub = document.getElementById("drawer-sub");
 const elStatus = document.getElementById("status");
@@ -154,6 +155,7 @@ function render() {
   if (state.view === "categories") {
     // Drawer should be hidden on categories
     openDrawer(false);
+    if (btnPower) btnPower.disabled = true;
     state.selectedZoneId = null;
     state.selectedDeviceId = null;
     renderTiles(categories, "category");
@@ -162,6 +164,7 @@ function render() {
 
   if (state.view === "zones") {
     openDrawer(false);
+    if (btnPower) btnPower.disabled = true;
     state.selectedDeviceId = null;
 
     const cat = currentCategory();
@@ -191,12 +194,14 @@ function render() {
       elDrawerTitle.textContent = "Select a device";
       elDrawerSub.textContent = "";
       openDrawer(false);
+      if (btnPower) btnPower.disabled = true;
       return;
     }
 
     elDrawerTitle.textContent = dev.name;
     elDrawerSub.textContent = `${currentCategory()?.name || ""} / ${zone.name}`;
     openDrawer(true);
+    if (btnPower) btnPower.disabled = false;
     return;
   }
 }
@@ -270,6 +275,12 @@ btnBack?.addEventListener("click", () => {
 
 btnDrawerClose?.addEventListener("click", () => {
   openDrawer(false);
+});
+
+// Power button lives in drawer header (outside keypad container)
+btnPower?.addEventListener("click", () => {
+  if (btnPower.disabled) return;
+  sendCommand("POWER");
 });
 
 elGrid?.addEventListener("click", (e) => {

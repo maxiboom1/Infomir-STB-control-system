@@ -328,7 +328,8 @@ class AppService {
 
     async getUserTree(user) {
         try {
-            // JWT uses `uid` (see auth-service.signToken). Keep backward-compat if `id` exists.
+            // JWT payload uses `uid` (see auth-service.signToken).
+            // Keep backward compatibility if something still sends `id`.
             const uid = Number(user?.uid ?? user?.id);
             if (!Number.isInteger(uid) || uid <= 0) return { ok: false, status: 401, message: "Unauthorized" };
 
