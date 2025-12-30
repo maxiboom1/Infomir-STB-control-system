@@ -1,65 +1,73 @@
 # STB Zones Control Dashboard
 
 ### 1) Project Purpose
-**Problem description:** Building has 150 STB's. part of them located near each other. When controlling from RC, It affects neigbord STB. Other case is when STB placed behind in-wall mounted screens. RC cannot reach the correct STB.
+**Problem description:** 
 
-**Solution:** Build a centralized web-based system that enables management and remote control of up to ~200 set-top boxes (STBs) (typical deployment ~150) from a single dashboard using sendqtevent utility via SSH that available only on MAG public firmware, allowing direct key injection using sendqtevent. The system will provide robust managment system, including users and permissions, device (STB's), categories and zones. In background - we store data in MSSQL, so system snapshot can be exported from there.
+The building is equipped with approximately 150 Infomir MAG-540w3 Set-Top Boxes (STBs). Many are positioned in close proximity to one another, causing remote control (RC) signals to inadvertently affect neighboring devices. Additionally, some STBs are installed behind in-wall mounted screens, making direct RC access unreliable or impossible.
+
+**Solution:** 
+
+Develop a centralized, web-based dashboard for managing and remotely controlling up to ~200 STBs from a single interface. The system leverages the sendqtevent utility available on the public firmware of MAG devices, enabling direct key injection via SSH.
+Key features include:
+
+- Robust management of users, permissions, devices (STBs), categories, and zones.
+- Backend data storage in Microsoft SQL Server (MSSQL) for easy system snapshots and exports.
 
 ---
 
 ### 2) Users and Permissions
 **System Administrator (Admin)**
-- Create / edit / delete Zones
-- Add STBs to the system
-- Edit STB details (name, notes, etc.)
-- Assign and move STBs between zones dynamically.
-- Admin user is a constant - and cannot be deleted/edited.
+- Create, edit, and delete categories and zones.
+- Create, edit, and delete STBs.
+- Dynamically assign and reassign STBs to zones, and zone to category.
+- The admin account is permanent and cannot be deleted or modified.
 
 **Operator**
-- View categories, zones and devices (based on defined permissions)
-- Control STBs via a command pad
+- View categories, zones, and devices based on assigned permissions.
+- Remotely control STBs using a virtual command pad.
 
 ---
 
 ### 3) Zones and Categories
-Categories and Zones represent logical grouping by site/room/team (for example: “Video Wall”, “Studio A”, “Edit Room 3”).
-Zones can be assigned to categories (For example, cat "Floor-1" has zones "Room-1", "Room-2").
-
-Within each zone, STBs are displayed as dynamic tiles/squares, automatically arranged left-to-right (flat view). This provides a clear visual representation of which STBs belong to the zone, without requiring a fixed physical layout.
+- Categories and zones provide logical grouping of STBs by location, function, or team (e.g., “Room 1”, “Room 2”, “Room 3”).
+- Zones can be nested under categories (e.g., category “Floor 1” containing zones “Room 1” and “Room 2”).
+- Within each zone, STBs are displayed as dynamic tiles arranged automatically in a flat, left-to-right layout. This approach offers a clear visual overview of zone membership without enforcing a fixed physical grid.
 
 ---
 
 ### 4) STB Control Experience (UI Overview)
-- Main screen shows Categories and Zones (left/top) and STB tiles inside each zone.
-- Selecting an STB highlights the tile and opens the remote command pad area.
-- The command pad provides fast operational keys (navigation, OK/Back/Menu, digits, CH+/CH-).
-- Each press triggers an immediate backend action and returns per-action feedback (success/failure).
+- The main interface displays categories and zones (e.g., in a sidebar or top navigation), with STB tiles shown for the selected zone.
+- Selecting an STB highlights its tile and opens a virtual remote command pad.
+- The command pad includes essential operational keys (navigation arrows, OK/Back/Menu, numeric digits, CH+/CH–).
+- Each key press triggers an immediate backend action via SSH, with real-time feedback on success or failure.
 
 ---
 
 ### 5) Connectivity Strategy
-In general - we not expecting heavy usage. Most of time system will be idle. There is no scenarion that many operators sends command. Usual case is operator hits CH number, hits OK, and close the interface.
+The system is designed for low-volume usage, with most sessions involving brief interactions (e.g., entering a channel number, confirming, and closing the interface). Concurrent commands from multiple operators to the same STB are rare.
 
-To maintain performance and avoid unnecessary network load, so each command will connect to SSH, send cmd, close connection.
+- Commands are executed using a fire-and-forget approach: each key press establishes a new SSH connection, sends the command, and closes immediately.
+- To prevent conflicts, a “busy” state is enforced per STB; simultaneous commands are dropped.
+- A command queue may be considered for future enhancements.
 
-Instead:
-- We will use "Fire-and-Forget" strategy ia this stage, and guard with "busy" state and drop command if busy. In case 2 operators send in same time command to same STB. For now, i think its ok, maybe as future plan we can implement command queue. 
-- This approach supports efficient, scalable operation for deployments of 150–200 STBs.
-
+This strategy ensures efficient performance and minimal network overhead for deployments of 150–200 STBs.
 ---
 
 ### 6) Hardware Versions / Environment
-- STB model: Infomir MAG540w3, FW: 220 (description: 2.20.10-pub-540), Hardware version: 18C-P0L-00
+- **STB Model**: Infomir MAG540w3
+- **Firmware:** 2.20.10-pub-540
+- **Hardware Version:** 18C-P0L-00
 
 ---
 
 ### 7) Protocol notes - SSH is a game changer here
-- MAG540w3 devices can be updated with Public firmware 2.20.10 (installed from soft.infomir.com, not via embedded portal auto-update).
-- Public firmware is required in order to enable SSH access (Factory / Portal-updated images have SSH locked).
-- Remote control is performed via SSH using the built-in sendqtevent utility.
-- List of available sendqtevent commands [here](https://wiki.infomir.eu/eng/set-top-box/for-developers/stb-linux-webkit/miscellaneous/keystroke-emulation):
-- Root credentials (user: root, password: 930920) are kept default at this stage. 
+SSH access is critical for remote control:
 
+- Devices must be updated to the public firmware version 2.20.10 (available from soft.infomir.com; not via embedded portal auto-update).
+- Public firmware enables SSH (locked in factory/portal-updated images).
+- Key emulation is performed via the built-in sendqtevent utility over SSH.
+- Full list of supported sendqtevent commands: [Keystroke Emulation – Infomir Documentation.](https://wiki.infomir.eu/eng/set-top-box/for-developers/stb-linux-webkit/miscellaneous/keystroke-emulation):
+- Default root credentials (user: root, password: 930920) are used at this stage.
 ---
 
 ## Change log
