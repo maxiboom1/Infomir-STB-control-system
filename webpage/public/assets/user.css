@@ -47,7 +47,6 @@ body{
 
 .brand-title{
   font-size:20px;
-  font-weight:800;
   letter-spacing:.2px;
   cursor:pointer;
 }
@@ -110,7 +109,6 @@ body[data-view="devices"] .main{
   font-size:12px;
   color:var(--muted);
   margin-bottom:6px;
-  font-weight:800;
 }
 
 .select{
@@ -119,7 +117,7 @@ body[data-view="devices"] .main{
   background:rgba(255,255,255,.04);
   color:var(--text);
   padding:10px 12px;
-  border-radius:12px;
+  border-radius:6px;
 }
 .select.select-lg{padding:14px 14px; font-size:16px}
 .select.select-md{padding:12px 14px; font-size:14px}
@@ -160,7 +158,6 @@ body[data-view="devices"] .main{
   border:2px solid rgba(255,255,255,.08);
   background:linear-gradient(180deg,var(--accent),var(--accent2));
   color:#fff;
-  font-weight:800;
   letter-spacing:.2px;
   cursor:pointer;
   user-select:none;
@@ -174,7 +171,6 @@ body[data-view="devices"] .main{
   left:12px;
   right:12px;
   font-size:11px;
-  font-weight:600;
   color:rgba(255,255,255,.82);
   opacity:.75;
 }
@@ -186,7 +182,7 @@ body[data-view="devices"] .main{
   border-radius:var(--radius);
   background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
 }
-.empty-title{font-weight:800; margin-bottom:6px}
+.empty-title{margin-bottom:6px}
 .empty-sub{color:var(--muted); font-size:14px; line-height:1.35}
 
 /* Keypad container (only visible in Devices view when a device is selected) */
@@ -210,7 +206,6 @@ body[data-view="devices"] .drawer[data-open="true"]{display:flex; flex:1 1 auto}
   user-select:none;
   border-radius:12px;
   padding:10px 10px;
-  font-weight:800;
   letter-spacing:.2px;
 }
 .key:active{transform:translateY(1px)}
@@ -241,7 +236,6 @@ body[data-view="devices"] .drawer[data-open="true"]{display:flex; flex:1 1 auto}
   font-size:12px;
   color:var(--muted);
   margin-bottom:6px;
-  font-weight:700;
 }
 
 /* Footer status bar (always present) */
@@ -281,8 +275,8 @@ body[data-view="devices"] .drawer[data-open="true"]{display:flex; flex:1 1 auto}
   box-shadow:0 18px 60px rgba(0,0,0,.55);
   padding:16px 16px 14px;
 }
-.modal-title{font-size:18px; font-weight:900; letter-spacing:.2px}
-.modal-sub{margin-top:6px; color:var(--muted); font-size:13px; font-weight:700}
+.modal-title{font-size:22px; letter-spacing:.2px}
+.modal-sub{margin-top:6px; color:var(--muted); font-size:13px; }
 .modal-body{margin-top:12px; color:var(--text); font-size:13px; line-height:1.5}
 .modal-actions{margin-top:14px; display:flex; justify-content:flex-end}
 
@@ -314,7 +308,6 @@ body[data-view="devices"] .drawer[data-open="true"]{display:flex; flex:1 1 auto}
 .kp-dpad{grid-auto-rows:1fr}
 .kp-big{min-height:44px; font-size:14px}
 
-.kp-color{font-weight:900}
 .kp-color.red{background:rgba(255,59,48,.22); border-color:rgba(255,59,48,.45)}
 .kp-color.green{background:rgba(52,199,89,.22); border-color:rgba(52,199,89,.45)}
 .kp-color.yellow{background:rgba(255,204,0,.18); border-color:rgba(255,204,0,.40)}
@@ -339,4 +332,23 @@ body[data-view="devices"] .drawer[data-open="true"]{display:flex; flex:1 1 auto}
 
 @media (max-width:360px){
   .kp-grid-5{grid-template-columns:repeat(3, 1fr)}
+}
+
+/* Try to darken the dropdown list (works in many desktop browsers) */
+.start-panel select option {
+  background-color: #0f141b;
+  color: #e6edf6;
+}
+
+/* Some browsers use optgroup too */
+.start-panel select optgroup {
+  background-color: #0f141b;
+  color: #e6edf6;
+
+}
+
+.start-panel select {
+  background-color: #10161f;
+  color: #e6edf6;
+
 }
