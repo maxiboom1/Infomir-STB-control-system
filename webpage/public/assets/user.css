@@ -9,8 +9,10 @@
   --accent:#1d7dff;
   --accent2:#145bba;
   --danger:#ff3b30;
+  --ok:#34c759;
   --radius:16px;
   --shadow:0 10px 30px rgba(0,0,0,.35);
+  --footerH:28px;
 }
 
 *{box-sizing:border-box}
@@ -26,9 +28,7 @@ body{
 }
 
 /* Hide scrollbars but keep scrolling */
-*{
-  scrollbar-width:none; /* Firefox */
-}
+*{scrollbar-width:none}
 *::-webkit-scrollbar{width:0;height:0}
 
 .topbar{
@@ -49,7 +49,9 @@ body{
   font-size:20px;
   font-weight:800;
   letter-spacing:.2px;
+  cursor:pointer;
 }
+.brand-title:hover{opacity:.92; text-decoration:underline}
 .crumb{
   margin-top:4px;
   font-size:13px;
@@ -69,24 +71,59 @@ body{
 }
 .btn:active{transform:translateY(1px)}
 .btn[disabled]{opacity:.45; cursor:not-allowed; transform:none}
-.btn.btn-ghost{
-  background:transparent;
-  box-shadow:none;
-}
 
 .main{
   flex:1 1 auto;
   padding:16px 14px;
   overflow:auto;
+  padding-bottom:calc(16px + var(--footerH) + env(safe-area-inset-bottom));
 }
 
-/* In Devices view, the keypad panel uses the remaining height.
-   So the tiles area should shrink to content (no huge empty area). */
+/* In Devices view, the keypad uses the remaining height.
+   So the devices row should stay compact and avoid consuming the whole viewport. */
 body[data-view="devices"] .main{
   flex:0 0 auto;
   overflow:hidden;
   padding-bottom:10px;
 }
+
+
+/* Start view (Category/Zone selectors) */
+.start{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+}
+.start[hidden]{display:none}
+.start-panel{
+  width:min(720px, 100%);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+  box-shadow:0 14px 40px rgba(0,0,0,.35);
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.field-label{
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:6px;
+  font-weight:800;
+}
+
+.select{
+  width:100%;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.04);
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:12px;
+}
+.select.select-lg{padding:14px 14px; font-size:16px}
+.select.select-md{padding:12px 14px; font-size:14px}
+.btn-open{align-self:flex-start; min-width:120px}
 
 .grid{
   display:grid;
@@ -103,17 +140,12 @@ body[data-view="devices"] .main{
 }
 .device-row .tile{
   flex:1 1 0;
-  min-width:76px;
-  max-width:none;
+  min-width:56px;
   min-height:72px;
   padding:12px 10px;
   font-size:13px;
 }
-.device-row .tile-title{
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
+.device-row .tile-title{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .device-row .tile-sub{display:none}
 
 .tile{
@@ -135,15 +167,7 @@ body[data-view="devices"] .main{
   box-shadow:var(--shadow);
 }
 .tile:active{transform:translateY(1px)}
-.tile.is-selected,
-.tile.selected{border-color:var(--danger); box-shadow:0 0 0 2px rgba(255,59,48,.25), var(--shadow)}
-
-/* Same color language across categories/zones/devices (business UI consistency) */
-.tile--category,
-.tile--zone,
-.tile--device{
-  background:linear-gradient(180deg,var(--accent),var(--accent2));
-}
+.tile.is-selected{border-color:var(--danger); box-shadow:0 0 0 2px rgba(255,59,48,.25), var(--shadow)}
 .tile-sub{
   position:absolute;
   bottom:10px;
@@ -155,8 +179,6 @@ body[data-view="devices"] .main{
   opacity:.75;
 }
 
-.tile-wrap{position:relative}
-
 .empty{
   margin-top:24px;
   padding:18px;
@@ -167,9 +189,9 @@ body[data-view="devices"] .main{
 .empty-title{font-weight:800; margin-bottom:6px}
 .empty-sub{color:var(--muted); font-size:14px; line-height:1.35}
 
-/* Drawer */
+/* Keypad container (only visible in Devices view when a device is selected) */
 .drawer{
-  display:none; /* only shown in Devices view */
+  display:none;
   flex-direction:column;
   min-height:0;
   background:rgba(12,17,24,.94);
@@ -178,28 +200,7 @@ body[data-view="devices"] .main{
   backdrop-filter:blur(10px);
   padding-bottom:env(safe-area-inset-bottom);
 }
-
-body[data-view="devices"] .drawer{display:flex; flex:1 1 auto}
-
-/* Closed drawer keeps only the header visible */
-body[data-view="devices"] .drawer[data-open="false"]{flex:0 0 auto}
-
-.drawer[data-open="false"] .keypad{display:none}
-
-.drawer-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  padding:12px 14px;
-  border-bottom:1px solid rgba(255,255,255,.06);
-}
-
-.drawer-meta{min-width:0}
-.drawer-title{font-weight:900; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.drawer-sub{font-size:12px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-
-.drawer-status{margin-top:6px; font-size:12px; color:var(--muted)}
+body[data-view="devices"] .drawer[data-open="true"]{display:flex; flex:1 1 auto}
 
 .key{
   border:1px solid rgba(255,255,255,.10);
@@ -215,24 +216,75 @@ body[data-view="devices"] .drawer[data-open="false"]{flex:0 0 auto}
 .key:active{transform:translateY(1px)}
 .key[disabled]{opacity:.45; cursor:not-allowed; transform:none}
 
-.key-power{
-  min-width:78px;
-  height:40px;
-  padding:0 12px;
-  border-radius:12px;
-  background:linear-gradient(180deg,#1a2636,#0f1722);
-}
-
 .keypad{
   flex:1 1 auto;
   min-height:0;
   overflow:auto;
-  max-width: 400px; /* Limit keypad width */
-  margin: auto; /* center keypad */
+  max-width:400px;
+  margin:auto;
   padding:10px 14px 14px;
   display:flex;
   justify-content:center;
 }
+
+/* Mobile device picker */
+.device-picker{
+  display:none;
+  margin:0 0 12px;
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+}
+.picker-label{
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:6px;
+  font-weight:700;
+}
+
+/* Footer status bar (always present) */
+.footer{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:20;
+  height:calc(var(--footerH) + env(safe-area-inset-bottom));
+  padding:6px 14px;
+  padding-bottom:calc(6px + env(safe-area-inset-bottom));
+  background:rgba(10,14,20,.88);
+  border-top:1px solid rgba(255,255,255,.06);
+  backdrop-filter:blur(8px);
+}
+.footer-status{
+  color:rgba(52,199,89,.95);
+  font-size:12px;
+  letter-spacing:.2px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* About modal */
+.modal{position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center}
+.modal[hidden]{display:none}
+.modal-backdrop{position:absolute; inset:0; background:rgba(0,0,0,.65)}
+.modal-card{
+  position:relative;
+  width:min(520px, calc(100% - 28px));
+  margin:0;
+  border-radius:16px;
+  border:1px solid rgba(52,199,89,.38);
+  background:linear-gradient(180deg,rgba(30,34,42,.96),rgba(12,15,20,.96));
+  box-shadow:0 18px 60px rgba(0,0,0,.55);
+  padding:16px 16px 14px;
+}
+.modal-title{font-size:18px; font-weight:900; letter-spacing:.2px}
+.modal-sub{margin-top:6px; color:var(--muted); font-size:13px; font-weight:700}
+.modal-body{margin-top:12px; color:var(--text); font-size:13px; line-height:1.5}
+.modal-actions{margin-top:14px; display:flex; justify-content:flex-end}
 
 .kp{
   width:min(520px, 100%);
@@ -251,14 +303,13 @@ body[data-view="devices"] .drawer[data-open="false"]{flex:0 0 auto}
 }
 
 .kp-grid{display:grid; gap:8px}
+.kp-grid-1{grid-template-columns:1fr}
 .kp-grid-3{grid-template-columns:repeat(3, 1fr)}
 .kp-grid-4{grid-template-columns:repeat(4, 1fr)}
 .kp-grid-5{grid-template-columns:repeat(5, 1fr)}
 
-.kp-btn{
-  min-height:36px;
-  font-size:13px;
-}
+.kp-btn{min-height:36px; font-size:13px}
+.kp-power{min-height:38px}
 
 .kp-dpad{grid-auto-rows:1fr}
 .kp-big{min-height:44px; font-size:14px}
@@ -269,16 +320,20 @@ body[data-view="devices"] .drawer[data-open="false"]{flex:0 0 auto}
 .kp-color.yellow{background:rgba(255,204,0,.18); border-color:rgba(255,204,0,.40)}
 .kp-color.blue{background:rgba(10,132,255,.20); border-color:rgba(10,132,255,.45)}
 
-/* status line is shown in drawer header */
+@media (max-width:640px){
+  .start-panel{padding:14px}
+  .select.select-lg{padding:13px 14px}
+}
 
 @media (max-width:520px){
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .tile{min-height:92px; padding:14px 12px; font-size:14px}
 
-  .kp-section{padding:8px}
+  body[data-view="devices"] .device-picker{display:block}
+  body[data-view="devices"] #grid{display:none}
+
   .kp-btn{min-height:38px; font-size:13px}
   .kp-big{min-height:44px}
-  .key-power{min-width:72px; height:38px}
   .kp-grid{gap:8px}
 }
 

@@ -61,8 +61,9 @@
           <!-- Right actions -->
           <section class="pane pane-scroll">
 
-            <div class="section">
-              <div class="section-title">Add device</div>
+            <details class="section acc">
+              <summary class="section-title">Add device</summary>
+              <div class="section-body">
 
               <div class="form-row">
                 <label class="label" for="dev-add-name">Name</label>
@@ -83,12 +84,12 @@
                 <button id="btn-dev-create" class="btn">Add</button>
                 <div id="dev-add-note" class="hint"></div>
               </div>
-            </div>
+              </div>
+            </details>
 
-            <div class="divider"></div>
-
-            <div class="section">
-              <div class="section-title">Edit selected</div>
+            <details class="section acc">
+              <summary class="section-title">Edit selected</summary>
+              <div class="section-body">
 
               <div class="form-row">
                 <label class="label">Selected</label>
@@ -114,7 +115,8 @@
                 <button id="btn-dev-save" class="btn">Save</button>
                 <button id="btn-dev-delete" class="btn danger">Delete</button>
               </div>
-            </div>
+              </div>
+            </details>
 
           </section>
         </div>
@@ -162,15 +164,16 @@
             <div id="zone-list" class="vlist" role="listbox" aria-label="Zones"></div>
 
             <div class="pane-foot">
-              <button id="btn-zone-reload" class="btn">Refresh</button>
+              <button id="btn-zone-reload" class="btn">Show all</button>
             </div>
           </section>
 
           <!-- Actions -->
           <section class="pane pane-scroll">
 
-            <div class="section">
-              <div class="section-title">Add category</div>
+            <details class="section acc">
+              <summary class="section-title">Add category</summary>
+              <div class="section-body">
 
               <div class="form-row">
                 <label class="label" for="cat-add-name">Name</label>
@@ -181,12 +184,13 @@
                 <button id="btn-cat-add" class="btn">Add</button>
                 <div id="cat-add-note" class="hint"></div>
               </div>
-            </div>
+              </div>
+            </details>
 
-            <div class="divider"></div>
 
-            <div class="section">
-              <div class="section-title">Edit selected category</div>
+            <details class="section acc">
+              <summary class="section-title">Edit selected category</summary>
+              <div class="section-body">
 
               <div class="form-row">
                 <label class="label">Selected</label>
@@ -204,12 +208,12 @@
               </div>
 
               <div id="cat-edit-note" class="hint"></div>
-            </div>
+              </div>
+            </details>
 
-            <div class="divider"></div>
-
-            <div class="section">
-              <div class="section-title">Add zone</div>
+            <details class="section acc">
+              <summary class="section-title">Add zone</summary>
+              <div class="section-body">
 
               <div class="form-row">
                 <label class="label" for="zone-add-name">Name</label>
@@ -225,12 +229,12 @@
                 <button id="btn-zone-add" class="btn">Add</button>
                 <div id="zone-add-note" class="hint"></div>
               </div>
-            </div>
+              </div>
+            </details>
 
-            <div class="divider"></div>
-
-            <div class="section">
-              <div class="section-title">Edit selected zone</div>
+            <details class="section acc">
+              <summary class="section-title">Edit selected zone</summary>
+              <div class="section-body">
 
               <div class="form-row">
                 <label class="label">Selected</label>
@@ -253,7 +257,8 @@
               </div>
 
               <div id="zone-edit-note" class="hint"></div>
-            </div>
+              </div>
+            </details>
 
           </section>
         </div>
@@ -288,8 +293,9 @@
           <!-- Actions -->
           <section class="pane pane-scroll">
 
-            <div class="section">
-              <div class="section-title">Add user</div>
+            <details class="section acc">
+              <summary class="section-title">Add user</summary>
+              <div class="section-body">
 
               <div class="form-row">
                 <label class="label" for="user-add-username">Username</label>
@@ -305,12 +311,12 @@
                 <button id="btn-user-add" class="btn">Add</button>
                 <div id="user-add-note" class="hint"></div>
               </div>
-            </div>
+              </div>
+            </details>
 
-            <div class="divider"></div>
-
-            <div class="section">
-              <div class="section-title">Edit selected user</div>
+            <details class="section acc">
+              <summary class="section-title">Edit selected user</summary>
+              <div class="section-body">
 
               <div class="form-row">
                 <label class="label">Selected</label>
@@ -333,12 +339,12 @@
               </div>
 
               <div id="user-edit-note" class="hint"></div>
-            </div>
+              </div>
+            </details>
 
-            <div class="divider"></div>
-
-            <div class="section">
-              <div class="section-title">Zone assignment</div>
+            <details class="section acc">
+              <summary class="section-title">Zone assignment</summary>
+              <div class="section-body">
               <div class="hint">Select a user, then move zones between lists. Save to apply permissions.</div>
 
               <div class="assign-grid">
@@ -362,7 +368,8 @@
                 <button id="btn-uz-save" class="btn">Save assignment</button>
                 <div id="uz-note" class="hint"></div>
               </div>
-            </div>
+              </div>
+            </details>
 
           </section>
         </div>

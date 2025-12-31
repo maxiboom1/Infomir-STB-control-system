@@ -417,8 +417,7 @@ class AppService {
                 return { ok: false, status: 500, message: `Command failed (exit ${result.code})`, ...result };
             }
 
-            //return { ok: true, message: `Sent ${cmdKey} to ${device.name} (${device.ip})`, ...result };
-            return { ok: true, message: `Sent ${cmdKey} to ${device.name}`, ...result };
+            return { ok: true, message: `Sent ${cmdKey} to ${device.name} (${device.ip})`, ...result };
 
         } catch (err) {
             return { ok: false, status: 500, message: `Send failed: ${err.message}` };

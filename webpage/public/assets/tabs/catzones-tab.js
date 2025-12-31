@@ -229,7 +229,11 @@ export function initCatZonesTab(shared) {
 
     // Buttons
     $("btn-cat-reload")?.addEventListener("click", () => reload());
-    $("btn-zone-reload")?.addEventListener("click", () => reload());
+    // "Show all": clear category filter (keeps search text)
+    $("btn-zone-reload")?.addEventListener("click", () => {
+      state.selectedCategoryId = null;
+      render();
+    });
 
     // Searches
     $("cat-search")?.addEventListener("input", () => render());

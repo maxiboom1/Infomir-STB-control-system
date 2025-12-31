@@ -1,33 +1,52 @@
-/* MAG Control — Regular User UI (v0.8.0)
-   Flow: Categories → Zones → Devices tiles + keypad drawer
+/* MAG Control — Regular User UI (v0.8.x)
+   Start screen: Category + Zone selectors → Open → Devices tiles + keypad
 */
 
+const elMain = document.getElementById("main");
 const elGrid = document.getElementById("grid");
 const elEmpty = document.getElementById("empty");
 const elEmptyTitle = document.getElementById("empty-title");
 const elEmptySub = document.getElementById("empty-sub");
 const elCrumb = document.getElementById("crumb");
+
 const btnBack = document.getElementById("btn-back");
 const btnLogout = document.getElementById("btn-logout");
+const elBrandTitle = document.getElementById("brand-title");
+
+const elStart = document.getElementById("start");
+const elCatSelect = document.getElementById("category-select");
+const elZoneSelect = document.getElementById("zone-select");
+const btnOpen = document.getElementById("btn-open");
+
 const elDrawer = document.getElementById("drawer");
-const btnDrawerClose = document.getElementById("btn-drawer-close");
-const btnPower = document.querySelector(".key-power");
-const elDrawerTitle = document.getElementById("drawer-title");
-const elDrawerSub = document.getElementById("drawer-sub");
 const elStatus = document.getElementById("status");
 const elKeypad = document.getElementById("keypad");
 
+// Mobile-only device picker (shown only on small screens in Devices view)
+const elDevicePicker = document.getElementById("device-picker");
+const elDeviceSelect = document.getElementById("device-select");
+
+// About modal
+const elAbout = document.getElementById("about-modal");
+const btnAboutClose = document.getElementById("about-close");
+
 const state = {
   tree: null,
-  view: "categories", // categories | zones | devices
+  view: "start", // start | devices
   selectedCategoryId: null,
   selectedZoneId: null,
   selectedDeviceId: null,
+  suppressZoneAutoOpen: false,
 };
+
+function isMobile() {
+  return window.matchMedia && window.matchMedia("(max-width:520px)").matches;
+}
 
 function setStatus(msg, isError = false) {
   if (!elStatus) return;
   elStatus.textContent = msg || "";
+  // footer default is green; errors can be red
   elStatus.style.color = isError ? "#ff3b30" : "";
 }
 
@@ -62,8 +81,8 @@ async function api(path, options) {
 }
 
 function openDrawer(open) {
+  if (!elDrawer) return;
   elDrawer.dataset.open = open ? "true" : "false";
-  if (btnDrawerClose) btnDrawerClose.textContent = open ? "Hide" : "Show";
 }
 
 function currentCategory() {
@@ -87,48 +106,99 @@ function setView(view) {
 }
 
 function buildCrumb() {
-  const parts = ["Categories"];
   const cat = currentCategory();
-  if (cat) parts.push(cat.name);
   const zone = currentZone();
-  if (zone) parts.push(zone.name);
-  elCrumb.textContent = parts.join(" / ");
 
-  // Back button rules
-  btnBack.disabled = (state.view === "categories");
+  if (!state.tree) {
+    elCrumb.textContent = "Loading…";
+  } else if (state.view === "devices") {
+    elCrumb.textContent = `${cat?.name || ""} / ${zone?.name || ""}`.trim();
+  } else {
+    // Start view
+    const catName = cat?.name || "";
+    const zoneName = zone?.name || "";
+    const parts = ["Select", catName, zoneName].filter(Boolean);
+    elCrumb.textContent = parts.join(" / ");
+  }
+
+  btnBack.disabled = (state.view !== "devices");
 }
 
 function showEmpty(title, sub) {
-  elGrid.innerHTML = "";
+  if (elStart) elStart.hidden = true;
+  if (elDevicePicker) elDevicePicker.hidden = true;
+  if (elGrid) elGrid.innerHTML = "";
   elEmptyTitle.textContent = title || "Empty";
   elEmptySub.textContent = sub || "";
   elEmpty.hidden = false;
+  openDrawer(false);
 }
 
 function hideEmpty() {
   elEmpty.hidden = true;
 }
 
-function renderTiles(items, type) {
-  // type: category | zone | device
-  const selectedId = type === "category"
-    ? state.selectedCategoryId
-    : type === "zone"
-      ? state.selectedZoneId
-      : state.selectedDeviceId;
+function renderDeviceTiles(devices) {
+  const selectedId = state.selectedDeviceId;
 
-  elGrid.innerHTML = items.map(item => {
-    const isSelected = item.id === selectedId;
-    const cls = ["tile", `tile--${type}`, isSelected ? "is-selected" : ""].filter(Boolean).join(" ");
-    const sub = (type === "device") ? (item.ip ? escapeHtml(item.ip) : "") : "";
-
+  elGrid.innerHTML = (devices || []).map(d => {
+    const isSelected = d.id === selectedId;
+    const cls = ["tile", "tile--device", isSelected ? "is-selected" : ""].filter(Boolean).join(" ");
     return `
-      <button class="${cls}" data-type="${type}" data-id="${item.id}">
-        <div class="tile-title">${escapeHtml(item.name)}</div>
-        ${sub ? `<div class="tile-sub">${sub}</div>` : ``}
+      <button class="${cls}" data-type="device" data-id="${d.id}">
+        <div class="tile-title">${escapeHtml(d.name)}</div>
+        ${d.ip ? `<div class="tile-sub">${escapeHtml(d.ip)}</div>` : ``}
       </button>
     `;
   }).join("");
+}
+
+function renderStart() {
+  // Start: show selectors + Open. Hide devices UI.
+  if (elStart) elStart.hidden = false;
+  if (elDevicePicker) elDevicePicker.hidden = true;
+  elGrid.className = "grid";
+  elGrid.innerHTML = "";
+  openDrawer(false);
+}
+
+function renderDevices() {
+  if (elStart) elStart.hidden = true;
+
+  const zone = currentZone();
+  if (!zone) {
+    setView("start");
+    return;
+  }
+
+  const devices = zone.devices || [];
+
+  elGrid.className = "grid device-row";
+
+  // Mobile: dropdown device picker. Desktop: tiles strip.
+  if (isMobile()) {
+    if (elDevicePicker) elDevicePicker.hidden = false;
+    if (elDeviceSelect) {
+      elDeviceSelect.innerHTML = [
+        `<option value="">Select device…</option>`,
+        ...devices.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`)
+      ].join("");
+      elDeviceSelect.value = state.selectedDeviceId ? String(state.selectedDeviceId) : "";
+    }
+    // no tiles in mobile
+    elGrid.innerHTML = "";
+  } else {
+    if (elDevicePicker) elDevicePicker.hidden = true;
+    renderDeviceTiles(devices);
+  }
+
+  const dev = currentDevice();
+  if (!dev) {
+    openDrawer(false);
+    return;
+  }
+
+  openDrawer(true);
 }
 
 function render() {
@@ -140,74 +210,70 @@ function render() {
   }
 
   const categories = state.tree.categories || [];
-
-  // no access
   if (!categories.length) {
     showEmpty(
       "No zones assigned",
       "Please contact the system admin to assign zones to your user."
     );
-    openDrawer(false);
     return;
   }
 
   hideEmpty();
 
-  if (state.view === "categories") {
-    elGrid.className = "grid";
-    // Drawer should be hidden on categories
-    openDrawer(false);
-    if (btnPower) btnPower.disabled = true;
-    state.selectedZoneId = null;
-    state.selectedDeviceId = null;
-    renderTiles(categories, "category");
-    return;
-  }
-
-  if (state.view === "zones") {
-    elGrid.className = "grid";
-    openDrawer(false);
-    if (btnPower) btnPower.disabled = true;
-    state.selectedDeviceId = null;
-
-    const cat = currentCategory();
-    if (!cat) {
-      // fallback
-      state.selectedCategoryId = categories[0].id;
-      return render();
-    }
-
-    renderTiles(cat.zones || [], "zone");
+  if (state.view === "start") {
+    renderStart();
     return;
   }
 
   if (state.view === "devices") {
-    elGrid.className = "grid device-row";
-    const zone = currentZone();
-    if (!zone) {
-      // fallback
-      setView("zones");
-      return;
-    }
-
-    renderTiles(zone.devices || [], "device");
-
-    // Drawer shows only when a device is selected
-    const dev = currentDevice();
-    if (!dev) {
-      elDrawerTitle.textContent = "Select a device";
-      elDrawerSub.textContent = "";
-      openDrawer(false);
-      if (btnPower) btnPower.disabled = true;
-      return;
-    }
-
-    elDrawerTitle.textContent = dev.name;
-    elDrawerSub.textContent = `${currentCategory()?.name || ""} / ${zone.name}`;
-    openDrawer(true);
-    if (btnPower) btnPower.disabled = false;
+    renderDevices();
     return;
   }
+}
+
+function populateCategories() {
+  const categories = state.tree?.categories || [];
+  if (!elCatSelect) return;
+
+  elCatSelect.innerHTML = categories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+
+  if (!state.selectedCategoryId && categories[0]) {
+    state.selectedCategoryId = categories[0].id;
+  }
+
+  if (state.selectedCategoryId) {
+    elCatSelect.value = String(state.selectedCategoryId);
+  }
+}
+
+function populateZonesForSelectedCategory() {
+  const cat = currentCategory();
+  const zones = cat?.zones || [];
+  if (!elZoneSelect) return;
+
+  elZoneSelect.innerHTML = zones.map(z => `<option value="${z.id}">${escapeHtml(z.name)}</option>`).join("");
+
+  // Keep selection if possible
+  const stillExists = zones.some(z => z.id === state.selectedZoneId);
+  if (!stillExists) {
+    state.selectedZoneId = zones[0]?.id || null;
+  }
+
+  if (state.selectedZoneId) {
+    elZoneSelect.value = String(state.selectedZoneId);
+  }
+}
+
+function totalZonesCount() {
+  const cats = state.tree?.categories || [];
+  return cats.reduce((sum, c) => sum + ((c.zones || []).length), 0);
+}
+
+function openSelectedZone() {
+  // Keep category/zone selection; reset device selection.
+  state.selectedDeviceId = null;
+  openDrawer(false);
+  setView("devices");
 }
 
 async function loadTree() {
@@ -217,22 +283,22 @@ async function loadTree() {
 
   state.tree = data.categories ? data : { categories: [] };
 
-  // Decide initial view:
-  // If only 1 category → skip categories and show zones directly (even if only one zone)
-  if (state.tree.categories?.length === 1) {
-    state.selectedCategoryId = state.tree.categories[0].id;
-    state.view = "zones";
-  } else {
-    state.view = "categories";
+  // Init selections: pick first category + first zone automatically.
+  const cats = state.tree.categories || [];
+  state.selectedCategoryId = cats[0]?.id || null;
+
+  populateCategories();
+  populateZonesForSelectedCategory();
+
+  // Auto-enter if only one zone exists in total.
+  if (totalZonesCount() === 1) {
+    setStatus("Ready");
+    openSelectedZone();
+    return;
   }
 
-  // Keep CSS layout in sync with current view
-  document.body.dataset.view = state.view;
-
-  document.body.dataset.view = state.view;
-
   setStatus("Ready");
-  render();
+  setView("start");
 }
 
 async function sendCommand(cmd) {
@@ -265,59 +331,80 @@ btnLogout?.addEventListener("click", async () => {
 });
 
 btnBack?.addEventListener("click", () => {
-  if (state.view === "devices") {
-    state.selectedDeviceId = null;
-    openDrawer(false);
-    setView("zones");
-    return;
+  if (state.view !== "devices") return;
+  state.selectedDeviceId = null;
+  openDrawer(false);
+  setView("start");
+});
+
+btnOpen?.addEventListener("click", () => {
+  if (!state.selectedZoneId) return;
+  openSelectedZone();
+});
+
+elCatSelect?.addEventListener("change", () => {
+  const id = Number(elCatSelect.value);
+  state.selectedCategoryId = id || null;
+
+  // Rebuild zones for this category, select first.
+  state.suppressZoneAutoOpen = true;
+  state.selectedZoneId = null;
+  populateZonesForSelectedCategory();
+  render();
+
+  // Allow auto-open on subsequent user-triggered zone changes.
+  setTimeout(() => {
+    state.suppressZoneAutoOpen = false;
+  }, 0);
+});
+
+elZoneSelect?.addEventListener("change", () => {
+  const id = Number(elZoneSelect.value);
+  state.selectedZoneId = id || null;
+
+  render();
+
+  // If user changed the zone manually — open it.
+  if (!state.suppressZoneAutoOpen && state.selectedZoneId) {
+    openSelectedZone();
   }
-  if (state.view === "zones") {
-    // If only one category exists, keep user in zones view (no point to go back)
-    if (state.tree?.categories?.length === 1) return;
-
-    state.selectedCategoryId = null;
-    state.selectedZoneId = null;
-    setView("categories");
-    return;
-  }
 });
 
-btnDrawerClose?.addEventListener("click", () => {
-  const isOpen = elDrawer?.dataset?.open === "true";
-  openDrawer(!isOpen);
+// About modal (opened by clicking header)
+function openAbout(open) {
+  if (!elAbout) return;
+  elAbout.hidden = !open;
+}
+
+elBrandTitle?.addEventListener("click", () => openAbout(true));
+btnAboutClose?.addEventListener("click", () => openAbout(false));
+elAbout?.addEventListener("click", (e) => {
+  const close = e.target?.dataset?.close;
+  if (close) openAbout(false);
 });
 
-// Power button lives in drawer header (outside keypad container)
-btnPower?.addEventListener("click", () => {
-  if (btnPower.disabled) return;
-  sendCommand("POWER");
+// Mobile device dropdown
+elDeviceSelect?.addEventListener("change", () => {
+  const id = Number(elDeviceSelect.value);
+  state.selectedDeviceId = id || null;
+  render();
 });
 
+// Re-render on resize so the UI can switch between dropdown and tiles
+window.addEventListener("resize", () => {
+  if (state.view === "devices") render();
+});
+
+// Device tile click (desktop)
 elGrid?.addEventListener("click", (e) => {
   const btn = e.target?.closest?.("button.tile");
   if (!btn) return;
   const type = btn.dataset.type;
   const id = Number(btn.dataset.id);
 
-  if (type === "category") {
-    state.selectedCategoryId = id;
-    state.selectedZoneId = null;
-    state.selectedDeviceId = null;
-    setView("zones");
-    return;
-  }
-
-  if (type === "zone") {
-    state.selectedZoneId = id;
-    state.selectedDeviceId = null;
-    setView("devices");
-    return;
-  }
-
   if (type === "device") {
-    state.selectedDeviceId = id;
+    state.selectedDeviceId = id || null;
     render();
-    return;
   }
 });
 

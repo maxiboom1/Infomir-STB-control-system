@@ -294,6 +294,30 @@ body{
   .section{
     padding:4px 2px;
   }
+
+  /* Accordion-style sections (details/summary). Multiple can be opened. */
+  .section.acc{
+    padding:0;
+    margin-bottom:12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius:12px;
+    overflow:hidden;
+    background: rgba(255,255,255,0.02);
+  }
+  .section.acc > summary{
+    list-style:none;
+    padding:10px 12px;
+    cursor:pointer;
+    user-select:none;
+    font-weight:700;
+  }
+  .section.acc > summary::-webkit-details-marker{display:none}
+  .section.acc[open] > summary{
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .section.acc .section-title{margin:0}
+  .section.acc .section-body{padding:10px 12px 12px}
   
   .section-title{
     font-weight:700;
