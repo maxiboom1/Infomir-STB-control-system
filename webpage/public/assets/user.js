@@ -63,7 +63,7 @@ async function api(path, options) {
 
 function openDrawer(open) {
   elDrawer.dataset.open = open ? "true" : "false";
-  document.body.dataset.drawer = open ? "open" : "closed";
+  if (btnDrawerClose) btnDrawerClose.textContent = open ? "Hide" : "Show";
 }
 
 function currentCategory() {
@@ -82,6 +82,7 @@ function currentDevice() {
 
 function setView(view) {
   state.view = view;
+  document.body.dataset.view = view;
   render();
 }
 
@@ -153,6 +154,7 @@ function render() {
   hideEmpty();
 
   if (state.view === "categories") {
+    elGrid.className = "grid";
     // Drawer should be hidden on categories
     openDrawer(false);
     if (btnPower) btnPower.disabled = true;
@@ -163,6 +165,7 @@ function render() {
   }
 
   if (state.view === "zones") {
+    elGrid.className = "grid";
     openDrawer(false);
     if (btnPower) btnPower.disabled = true;
     state.selectedDeviceId = null;
@@ -179,6 +182,7 @@ function render() {
   }
 
   if (state.view === "devices") {
+    elGrid.className = "grid device-row";
     const zone = currentZone();
     if (!zone) {
       // fallback
@@ -221,6 +225,11 @@ async function loadTree() {
   } else {
     state.view = "categories";
   }
+
+  // Keep CSS layout in sync with current view
+  document.body.dataset.view = state.view;
+
+  document.body.dataset.view = state.view;
 
   setStatus("Ready");
   render();
@@ -274,7 +283,8 @@ btnBack?.addEventListener("click", () => {
 });
 
 btnDrawerClose?.addEventListener("click", () => {
-  openDrawer(false);
+  const isOpen = elDrawer?.dataset?.open === "true";
+  openDrawer(!isOpen);
 });
 
 // Power button lives in drawer header (outside keypad container)

@@ -28,20 +28,24 @@
     </div>
   </main>
 
-  <!-- Keypad drawer (hidden until device selected) -->
+  <!-- Keypad panel (shown only in Devices view) -->
   <section id="drawer" class="drawer" aria-label="Keypad" data-open="false">
     <div class="drawer-head">
       <button class="key key-power" data-cmd="POWER" title="Power" aria-label="Power">POWER</button>
+
       <div class="drawer-meta">
-        <div id="drawer-title" class="drawer-title">No device selected</div>
+        <div id="drawer-title" class="drawer-title">Select a device</div>
         <div id="drawer-sub" class="drawer-sub"></div>
+        <div id="status" class="drawer-status">Ready.</div>
       </div>
+
       <button id="btn-drawer-close" class="btn btn-ghost">Hide</button>
     </div>
 
-    <div id="keypad" class="keypad">
-      <div class="kp" aria-label="Remote keypad">
+    <div id="keypad" class="keypad" aria-label="Remote keypad">
+      <div class="kp">
 
+        <!-- Numbers + Channel +/- around 0 -->
         <div class="kp-section" aria-label="Numbers">
           <div class="kp-grid kp-grid-3">
             <button class="key kp-btn" data-cmd="1">1</button>
@@ -53,33 +57,24 @@
             <button class="key kp-btn" data-cmd="7">7</button>
             <button class="key kp-btn" data-cmd="8">8</button>
             <button class="key kp-btn" data-cmd="9">9</button>
-            <div></div>
+            <button class="key kp-btn" data-cmd="CH_MINUS">CH-</button>
             <button class="key kp-btn" data-cmd="0">0</button>
-            <div></div>
+            <button class="key kp-btn" data-cmd="CH_PLUS">CH+</button>
           </div>
         </div>
 
+        <!-- Navigation (bigger) -->
         <div class="kp-section" aria-label="Navigation">
-          <div class="kp-nav">
-            <div class="kp-col">
-              <button class="key kp-btn" data-cmd="VOL_PLUS">VOL+</button>
-              <button class="key kp-btn" data-cmd="VOL_MINUS">VOL-</button>
-            </div>
-
-            <div class="kp-dpad">
-              <button class="key kp-btn kp-big" data-cmd="UP">UP</button>
-              <div class="kp-dpad-row">
-                <button class="key kp-btn kp-big" data-cmd="LEFT">LEFT</button>
-                <button class="key kp-btn kp-big" data-cmd="OK">OK</button>
-                <button class="key kp-btn kp-big" data-cmd="RIGHT">RIGHT</button>
-              </div>
-              <button class="key kp-btn kp-big" data-cmd="DOWN">DOWN</button>
-            </div>
-
-            <div class="kp-col">
-              <button class="key kp-btn" data-cmd="CH_PLUS">CH+</button>
-              <button class="key kp-btn" data-cmd="CH_MINUS">CH-</button>
-            </div>
+          <div class="kp-grid kp-grid-3 kp-dpad">
+            <div></div>
+            <button class="key kp-btn kp-big" data-cmd="UP">UP</button>
+            <div></div>
+            <button class="key kp-btn kp-big" data-cmd="LEFT">LEFT</button>
+            <button class="key kp-btn kp-big" data-cmd="OK">OK</button>
+            <button class="key kp-btn kp-big" data-cmd="RIGHT">RIGHT</button>
+            <div></div>
+            <button class="key kp-btn kp-big" data-cmd="DOWN">DOWN</button>
+            <div></div>
           </div>
         </div>
 
@@ -95,15 +90,11 @@
 
         <div class="kp-section" aria-label="Color keys">
           <div class="kp-grid kp-grid-4">
-            <button class="key kp-btn kp-color red" data-cmd="RED">RED</button>
-            <button class="key kp-btn kp-color green" data-cmd="GREEN">GREEN</button>
-            <button class="key kp-btn kp-color yellow" data-cmd="YELLOW">YELLOW</button>
-            <button class="key kp-btn kp-color blue" data-cmd="BLUE">BLUE</button>
+            <button class="key kp-btn kp-color red" data-cmd="RED"></button>
+            <button class="key kp-btn kp-color green" data-cmd="GREEN"></button>
+            <button class="key kp-btn kp-color yellow" data-cmd="YELLOW"></button>
+            <button class="key kp-btn kp-color blue" data-cmd="BLUE"></button>
           </div>
-        </div>
-
-        <div class="statusbar">
-          <div id="status" class="status">Ready.</div>
         </div>
 
       </div>

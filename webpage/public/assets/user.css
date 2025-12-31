@@ -20,7 +20,9 @@ body{
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
   background:linear-gradient(180deg,var(--bg),#070a0e);
   color:var(--text);
-  overflow:hidden; /* main scroll only */
+  overflow:hidden; /* keep the app within the viewport */
+  display:flex;
+  flex-direction:column;
 }
 
 /* Hide scrollbars but keep scrolling */
@@ -73,13 +75,17 @@ body{
 }
 
 .main{
-  height:calc(100% - 64px); /* fallback; drawer overlays */
-  padding:16px 14px 140px; /* space for drawer */
+  flex:1 1 auto;
+  padding:16px 14px;
   overflow:auto;
 }
 
-body[data-drawer="open"] .main{
-  padding-bottom: calc(260px + env(safe-area-inset-bottom));
+/* In Devices view, the keypad panel uses the remaining height.
+   So the tiles area should shrink to content (no huge empty area). */
+body[data-view="devices"] .main{
+  flex:0 0 auto;
+  overflow:hidden;
+  padding-bottom:10px;
 }
 
 .grid{
@@ -87,6 +93,28 @@ body[data-drawer="open"] .main{
   gap:14px;
   grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
 }
+
+/* Devices strip: one horizontal row (can shrink to fit many devices). */
+.device-row{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:14px;
+  overflow:hidden;
+}
+.device-row .tile{
+  flex:1 1 0;
+  min-width:76px;
+  max-width:none;
+  min-height:72px;
+  padding:12px 10px;
+  font-size:13px;
+}
+.device-row .tile-title{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.device-row .tile-sub{display:none}
 
 .tile{
   position:relative;
@@ -110,13 +138,11 @@ body[data-drawer="open"] .main{
 .tile.is-selected,
 .tile.selected{border-color:var(--danger); box-shadow:0 0 0 2px rgba(255,59,48,.25), var(--shadow)}
 
-/* Differentiate device tiles for faster UX scanning */
+/* Same color language across categories/zones/devices (business UI consistency) */
 .tile--category,
-.tile--zone{
-  background:linear-gradient(180deg,var(--accent),var(--accent2));
-}
+.tile--zone,
 .tile--device{
-  background:linear-gradient(180deg,#2aa89c,#16756c);
+  background:linear-gradient(180deg,var(--accent),var(--accent2));
 }
 .tile-sub{
   position:absolute;
@@ -143,20 +169,22 @@ body[data-drawer="open"] .main{
 
 /* Drawer */
 .drawer{
-  position:fixed;
-  left:0;
-  right:0;
-  bottom:0;
-  z-index:20;
+  display:none; /* only shown in Devices view */
+  flex-direction:column;
+  min-height:0;
   background:rgba(12,17,24,.94);
   border-top:1px solid rgba(255,255,255,.08);
   box-shadow:0 -14px 40px rgba(0,0,0,.45);
   backdrop-filter:blur(10px);
-  transform:translateY(82%);
-  transition:transform .22s ease;
   padding-bottom:env(safe-area-inset-bottom);
 }
-.drawer[data-open="true"]{transform:translateY(0)}
+
+body[data-view="devices"] .drawer{display:flex; flex:1 1 auto}
+
+/* Closed drawer keeps only the header visible */
+body[data-view="devices"] .drawer[data-open="false"]{flex:0 0 auto}
+
+.drawer[data-open="false"] .keypad{display:none}
 
 .drawer-head{
   display:flex;
@@ -170,6 +198,8 @@ body[data-drawer="open"] .main{
 .drawer-meta{min-width:0}
 .drawer-title{font-weight:900; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .drawer-sub{font-size:12px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+
+.drawer-status{margin-top:6px; font-size:12px; color:var(--muted)}
 
 .key{
   border:1px solid rgba(255,255,255,.10);
@@ -194,9 +224,12 @@ body[data-drawer="open"] .main{
 }
 
 .keypad{
-  max-height:44vh;
+  flex:1 1 auto;
+  min-height:0;
   overflow:auto;
-  padding:12px 14px 14px;
+  max-width: 400px; /* Limit keypad width */
+  margin: auto; /* center keypad */
+  padding:10px 14px 14px;
   display:flex;
   justify-content:center;
 }
@@ -205,39 +238,30 @@ body[data-drawer="open"] .main{
   width:min(520px, 100%);
   display:flex;
   flex-direction:column;
-  gap:12px;
+  gap:10px;
+  flex:1 1 auto;
+  min-height:0;
 }
 
 .kp-section{
   border:1px solid rgba(255,255,255,.06);
   background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
   border-radius:14px;
-  padding:10px;
+  padding:8px;
 }
 
-.kp-grid{display:grid; gap:10px}
+.kp-grid{display:grid; gap:8px}
 .kp-grid-3{grid-template-columns:repeat(3, 1fr)}
 .kp-grid-4{grid-template-columns:repeat(4, 1fr)}
 .kp-grid-5{grid-template-columns:repeat(5, 1fr)}
 
 .kp-btn{
-  min-height:44px;
-  font-size:14px;
+  min-height:36px;
+  font-size:13px;
 }
 
-.kp-nav{
-  display:grid;
-  grid-template-columns:1fr 1.4fr 1fr;
-  gap:10px;
-  align-items:center;
-}
-
-.kp-col{display:flex; flex-direction:column; gap:10px}
-
-.kp-dpad{display:flex; flex-direction:column; gap:10px}
-.kp-dpad-row{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px}
-
-.kp-big{min-height:52px; font-size:15px}
+.kp-dpad{grid-auto-rows:1fr}
+.kp-big{min-height:44px; font-size:14px}
 
 .kp-color{font-weight:900}
 .kp-color.red{background:rgba(255,59,48,.22); border-color:rgba(255,59,48,.45)}
@@ -245,25 +269,17 @@ body[data-drawer="open"] .main{
 .kp-color.yellow{background:rgba(255,204,0,.18); border-color:rgba(255,204,0,.40)}
 .kp-color.blue{background:rgba(10,132,255,.20); border-color:rgba(10,132,255,.45)}
 
-.statusbar{
-  padding:10px 12px;
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:12px;
-  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
-}
-.status{font-size:13px; color:var(--muted)}
+/* status line is shown in drawer header */
 
 @media (max-width:520px){
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .tile{min-height:92px; padding:14px 12px; font-size:14px}
 
   .kp-section{padding:8px}
-  .kp-btn{min-height:42px; font-size:13px}
-  .kp-big{min-height:48px}
+  .kp-btn{min-height:38px; font-size:13px}
+  .kp-big{min-height:44px}
   .key-power{min-width:72px; height:38px}
   .kp-grid{gap:8px}
-  .kp-nav{gap:8px}
-  .kp-dpad-row{gap:8px}
 }
 
 @media (max-width:360px){
