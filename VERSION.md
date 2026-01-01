@@ -1,3 +1,12 @@
+Version: v0.8.6.2
+Date: 2026-01-01
+Done:
+- Admin: Devices tab filter UI restyled — single row containing Search (left) + Zone filter (right).
+- Devices tab: removed "show categories" toggle and removed "Zone filter" label (default is All zones).
+Notes:
+- Filter state remains in-memory only until page refresh (no localStorage).
+----------------------------------------
+
 Version: v0.8.6
 Date: 2026-01-01
 Done:

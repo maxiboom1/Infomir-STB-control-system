@@ -22,7 +22,6 @@ export function initDevicesTab(shared) {
 
     // Filter UI (in-memory only; reset on page refresh)
     filterZoneId: null, // null => all
-    showCategoriesInFilter: true,
   };
 
   // Ip validator
@@ -121,7 +120,7 @@ export function initDevicesTab(shared) {
       });
   }
 
-  function populateZoneFilterSelect(selectEl, zones, selectedId, showCats) {
+  function populateZoneFilterSelect(selectEl, zones, selectedId) {
     if (!selectEl) return;
 
     const want = selectedId ? String(selectedId) : "";
@@ -137,26 +136,13 @@ export function initDevicesTab(shared) {
       return;
     }
 
-    if (showCats) {
-      for (const [catName, arr] of groupZonesByCategory(zones)) {
-        const og = document.createElement("optgroup");
-        og.label = catName;
-        for (const z of arr) {
-          const opt = document.createElement("option");
-          opt.value = String(z.id);
-          opt.textContent = z.name;
-          og.appendChild(opt);
-        }
-        selectEl.appendChild(og);
-      }
-    } else {
-      const sorted = [...zones].sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }));
-      for (const z of sorted) {
-        const opt = document.createElement("option");
-        opt.value = String(z.id);
-        opt.textContent = z.name;
-        selectEl.appendChild(opt);
-      }
+    // Keep filter list simple: zone names only (no category grouping).
+    const sorted = [...zones].sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }));
+    for (const z of sorted) {
+      const opt = document.createElement("option");
+      opt.value = String(z.id);
+      opt.textContent = z.name;
+      selectEl.appendChild(opt);
     }
 
     // Restore selection if still valid
@@ -168,9 +154,7 @@ export function initDevicesTab(shared) {
   }
 
   function renderZoneFilter() {
-    populateZoneFilterSelect($("dev-zone-filter"), state.zones, state.filterZoneId, state.showCategoriesInFilter);
-    const chk = $("dev-zone-filter-showcat");
-    if (chk) chk.checked = !!state.showCategoriesInFilter;
+    populateZoneFilterSelect($("dev-zone-filter"), state.zones, state.filterZoneId);
   }
 
   function render() {
@@ -300,13 +284,6 @@ export function initDevicesTab(shared) {
       }
       render();
     });
-
-    $("dev-zone-filter-showcat")?.addEventListener("change", () => {
-      state.showCategoriesInFilter = !!$("dev-zone-filter-showcat")?.checked;
-      // Rebuild options while keeping selection
-      renderZoneFilter();
-    });
-
 
     // Select device
     listEl.addEventListener("click", (e) => {
