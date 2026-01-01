@@ -109,7 +109,6 @@ function setTab(tabName) {
     p.style.display = show ? "" : "none";
   });
 
-  localStorage.setItem("adminTab", tabName);
   setStatus(`Tab: ${tabName}`);
 
   const ctrl = ensureController(tabName);
@@ -119,7 +118,5 @@ function setTab(tabName) {
 tabButtons.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Default to Zones first (Devices depend on Zones).
-  const defaultTab = localStorage.getItem("adminTab") || "catzones";
-  setTab(defaultTab);
+  setTab("catzones");
 });

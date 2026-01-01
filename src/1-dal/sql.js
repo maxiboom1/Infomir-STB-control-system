@@ -40,7 +40,7 @@ async function execute(query, values) {
     const result = await request.query(query);
     return result; // ALWAYS full result (has .recordset)
   } catch (err) {
-    logger(`Error executing query: ${err}`, "red");
+    logger(`[SQL EXECUTER] Error executing query: ${err}`, "red");
     throw err;
   }
 }

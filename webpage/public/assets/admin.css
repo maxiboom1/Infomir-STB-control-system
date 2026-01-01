@@ -148,7 +148,7 @@ body{
     text-align:left;
     padding:10px 12px;
     border-radius:10px;
-    border:1px solid rgba(255,255,255,0.10);
+    border:1px solid rgba(255,255,255,0.30);
     background: rgba(255,255,255,0.02);
     cursor:pointer;
     color: var(--text);
@@ -157,7 +157,7 @@ body{
   
   .nav-tab.active{
     border-color: rgba(79,140,255,0.65);
-    background: rgba(79,140,255,0.10);
+    background: rgba(79,140,255,0.15);
   }
   
   .nav-bottom{
@@ -299,13 +299,12 @@ body{
   .section.acc{
     padding:0;
     margin-bottom:12px;
-    border: 1px solid rgba(255,255,255,0.10);
+    border: 1px solid rgba(79,140,255,0.3);
     border-radius:12px;
     overflow:hidden;
     background: rgba(255,255,255,0.02);
   }
   .section.acc > summary{
-    list-style:none;
     padding:10px 12px;
     cursor:pointer;
     user-select:none;
