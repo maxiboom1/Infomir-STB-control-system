@@ -98,6 +98,8 @@ function ensureController(tabName) {
 }
 
 function setTab(tabName) {
+  // Close all accordion panes when switching tabs
+  closeAllAccordions();
   tabButtons.forEach(btn => {
     const isActive = btn.dataset.tab === tabName;
     btn.classList.toggle("active", isActive);
@@ -118,5 +120,30 @@ function setTab(tabName) {
 tabButtons.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
 
 document.addEventListener("DOMContentLoaded", () => {
+  initAccordionBehavior();
   setTab("catzones");
 });
+
+
+/* =========================
+   Accordion behavior (Admin)
+   ========================= */
+
+function closeAllAccordions() {
+  document.querySelectorAll('details.section.acc').forEach(d => { d.open = false; });
+}
+
+function initAccordionBehavior() {
+  // Enforce "single-open" accordion across the entire admin page.
+  // Use capture=true because <details> toggle doesn't reliably bubble.
+  document.addEventListener('toggle', (e) => {
+    const d = e.target;
+    if (!(d instanceof HTMLDetailsElement)) return;
+    if (!d.matches('details.section.acc')) return;
+    if (!d.open) return;
+
+    document.querySelectorAll('details.section.acc').forEach(other => {
+      if (other !== d) other.open = false;
+    });
+  }, true);
+}

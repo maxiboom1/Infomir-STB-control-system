@@ -2,6 +2,11 @@ import { Client } from "ssh2";
 
 class SshService {
 
+    constructor(){
+        // per-host busy flag (drop commands while busy)
+        this._busyByHost = new Map();
+    }
+
     exec(args) {
         const { host, port, username, password, cmd } = args || {};
         const readyTimeout = args?.readyTimeout ?? 4000;
@@ -11,6 +16,13 @@ class SshService {
         if (!username) throw new Error("SshService.exec: missing user");
         if (password === undefined || password === null) throw new Error("SshService.exec: missing password");
         if (!cmd) throw new Error("SshService.exec: missing cmd");
+const key = `${host}:${port}:${username}`;
+if (this._busyByHost.get(key)) {
+    // Drop command when device connection is busy (no queue for now)
+    return Promise.resolve({ busy: true, stdout: "", stderr: "", code: null, signal: null });
+}
+this._busyByHost.set(key, true);
+
 
         return new Promise((resolve, reject) => {
             const conn = new Client();

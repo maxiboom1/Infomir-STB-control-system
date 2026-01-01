@@ -19,6 +19,10 @@ export function initDevicesTab(shared) {
     zones: [],
     devices: [],
     selectedDeviceId: null,
+
+    // Filter UI (in-memory only; reset on page refresh)
+    filterZoneId: null, // null => all
+    showCategoriesInFilter: true,
   };
 
   // Ip validator
@@ -103,6 +107,72 @@ export function initDevicesTab(shared) {
     }
   }
 
+  function getVisibleDevices() {
+    const search = String($("dev-search")?.value || "").trim().toLowerCase();
+    const zf = state.filterZoneId;
+
+    return (state.devices || [])
+      .filter(d => {
+        if (zf && Number(d.zone_id) !== zf) return false;
+        if (!search) return true;
+        const n = String(d.name || "").toLowerCase();
+        const ip = String(d.ip || "").toLowerCase();
+        return n.includes(search) || ip.includes(search);
+      });
+  }
+
+  function populateZoneFilterSelect(selectEl, zones, selectedId, showCats) {
+    if (!selectEl) return;
+
+    const want = selectedId ? String(selectedId) : "";
+    selectEl.innerHTML = "";
+
+    const all = document.createElement("option");
+    all.value = "";
+    all.textContent = "All zones";
+    selectEl.appendChild(all);
+
+    if (!zones || zones.length === 0) {
+      selectEl.value = "";
+      return;
+    }
+
+    if (showCats) {
+      for (const [catName, arr] of groupZonesByCategory(zones)) {
+        const og = document.createElement("optgroup");
+        og.label = catName;
+        for (const z of arr) {
+          const opt = document.createElement("option");
+          opt.value = String(z.id);
+          opt.textContent = z.name;
+          og.appendChild(opt);
+        }
+        selectEl.appendChild(og);
+      }
+    } else {
+      const sorted = [...zones].sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }));
+      for (const z of sorted) {
+        const opt = document.createElement("option");
+        opt.value = String(z.id);
+        opt.textContent = z.name;
+        selectEl.appendChild(opt);
+      }
+    }
+
+    // Restore selection if still valid
+    selectEl.value = want;
+    if (want && selectEl.value !== want) {
+      // selection not present anymore
+      selectEl.value = "";
+    }
+  }
+
+  function renderZoneFilter() {
+    populateZoneFilterSelect($("dev-zone-filter"), state.zones, state.filterZoneId, state.showCategoriesInFilter);
+    const chk = $("dev-zone-filter-showcat");
+    if (chk) chk.checked = !!state.showCategoriesInFilter;
+  }
+
   function render() {
     if (!state.inited) return;
 
@@ -126,16 +196,16 @@ export function initDevicesTab(shared) {
 
     populateZoneSelect($("dev-edit-zone"), state.zones, selected?.zone_id || null);
 
+    // Filter controls
+    renderZoneFilter();
+
     // Render list
-    const search = String($("dev-search")?.value || "").trim().toLowerCase();
-    const filtered = (state.devices || [])
-      .filter(d => {
-        if (!search) return true;
-        const n = String(d.name || "").toLowerCase();
-        const ip = String(d.ip || "").toLowerCase();
-        return n.includes(search) || ip.includes(search);
-      })
+    const filtered = getVisibleDevices()
       .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }));
+
+    if (state.selectedDeviceId && !filtered.some(d => d.id === state.selectedDeviceId)) {
+      state.selectedDeviceId = null;
+    }
 
     listEl.innerHTML = "";
     if (filtered.length === 0) {
@@ -218,6 +288,25 @@ export function initDevicesTab(shared) {
 
     $("btn-dev-reload")?.addEventListener("click", () => reload());
     $("dev-search")?.addEventListener("input", () => render());
+
+    $("dev-zone-filter")?.addEventListener("change", () => {
+      const v = String($("dev-zone-filter")?.value || "");
+      const id = toInt(v);
+      state.filterZoneId = (id && id > 0) ? id : null;
+      // If current selection is not in filtered set, clear it
+      const sel = state.selectedDeviceId;
+      if (sel && !getVisibleDevices().some(d => d.id === sel)) {
+        state.selectedDeviceId = null;
+      }
+      render();
+    });
+
+    $("dev-zone-filter-showcat")?.addEventListener("change", () => {
+      state.showCategoriesInFilter = !!$("dev-zone-filter-showcat")?.checked;
+      // Rebuild options while keeping selection
+      renderZoneFilter();
+    });
+
 
     // Select device
     listEl.addEventListener("click", (e) => {

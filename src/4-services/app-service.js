@@ -412,6 +412,10 @@ class AppService {
                 readyTimeout: 4000,
             });
             //{ host, port, username, password, cmd }
+            if (result?.busy) {
+                return { ok: false, status: 409, message: `Device busy` };
+            }
+
             // sendqtevent often returns empty stdout; success is exit code 0 or null
             if (result?.code !== null && result.code !== 0) {
                 return { ok: false, status: 500, message: `Command failed (exit ${result.code})`, ...result };

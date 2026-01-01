@@ -73,3 +73,11 @@ SSH access is critical for remote control:
 ---
 
 ## Change log
+
+
+## Changelog
+
+### v0.8.6 — 2026-01-01
+- Admin: accordion panes behave as single-open; switching tabs closes all panes.
+- Admin Devices: added zone filter dropdown + “show categories” toggle (state resets on page refresh; no localStorage).
+- Backend SSH: per-device (host) busy flag; drop commands while busy (returns HTTP 409).

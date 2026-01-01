@@ -47,9 +47,23 @@
           <!-- Left list -->
           <section class="pane">
             <div class="pane-head">
-              <div class="pane-title">Device list</div>
-              <input id="dev-search" class="input" type="text" placeholder="Search..." />
-            </div>
+      <div class="pane-head-top">
+        <div class="pane-title">Device list</div>
+        <input id="dev-search" class="input" type="text" placeholder="Search..." />
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-left">
+          <div class="filter-label">Zone filter</div>
+          <select id="dev-zone-filter" class="select" aria-label="Filter devices by zone"></select>
+        </div>
+
+        <label class="filter-toggle">
+          <input id="dev-zone-filter-showcat" type="checkbox" checked />
+          <span>show categories</span>
+        </label>
+      </div>
+    </div>
 
             <div id="dev-list" class="vlist" role="listbox" aria-label="Devices"></div>
 

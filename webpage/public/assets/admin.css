@@ -391,3 +391,25 @@ body{
     padding-top:14px;
   }
   
+
+/* Devices list filter */
+.filter-row{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:10px;
+}
+.filter-left{ flex:1; min-width:0; }
+.filter-label{ color:#9bb0c9; font-size:12px; margin:0 0 6px; }
+.filter-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#9bb0c9;
+  font-size:12px;
+  user-select:none;
+  white-space:nowrap;
+  padding:0 6px 6px;
+}
+.filter-toggle input{ width:16px; height:16px; }
