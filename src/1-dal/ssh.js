@@ -16,68 +16,73 @@ class SshService {
         if (!username) throw new Error("SshService.exec: missing user");
         if (password === undefined || password === null) throw new Error("SshService.exec: missing password");
         if (!cmd) throw new Error("SshService.exec: missing cmd");
-const key = `${host}:${port}:${username}`;
-if (this._busyByHost.get(key)) {
-    // Drop command when device connection is busy (no queue for now)
-    return Promise.resolve({ busy: true, stdout: "", stderr: "", code: null, signal: null });
-}
-this._busyByHost.set(key, true);
-
+        const key = `${host}:${port}:${username}`;
+        if (this._busyByHost.get(key)) {
+            // Drop command when device connection is busy (no queue for now)
+            return Promise.resolve({ busy: true, stdout: "", stderr: "", code: null, signal: null });
+        }
+        this._busyByHost.set(key, true);
 
         return new Promise((resolve, reject) => {
             const conn = new Client();
             let settled = false;
-
-            const done = (err, result) => {
-                if (settled) return;
-                settled = true;
-                try { conn.end(); } catch { }
-                if (err) reject(err);
-                else resolve(result);
+          
+            const clearBusy = () => {
+              this._busyByHost.delete(key);
             };
-
+          
+            const done = (err, result) => {
+              if (settled) return;
+              settled = true;
+              clearBusy(); // ✅ always release busy flag
+              try { conn.end(); } catch {}
+              if (err) reject(err);
+              else resolve(result);
+            };
+          
             const timer = setTimeout(() => {
-                done(new Error(`SSH exec timeout after ${readyTimeout}ms (${host}:${port})`));
+              done(new Error(`SSH exec timeout after ${readyTimeout}ms (${host}:${port})`));
             }, readyTimeout);
-
+          
             conn
-                .on("ready", () => {
-                    conn.exec(cmd, (err, stream) => {
-                        if (err) {
-                            clearTimeout(timer);
-                            return done(err);
-                        }
-
-                        let stdout = "";
-                        let stderr = "";
-
-                        stream.on("data", (d) => (stdout += d.toString()));
-                        stream.stderr.on("data", (d) => (stderr += d.toString()));
-
-                        stream.on("close", (code, signal) => {
-                            clearTimeout(timer);
-                            done(null, {
-                                stdout,
-                                stderr,
-                                code: typeof code === "number" ? code : null,
-                                signal: signal ?? null,
-                            });
-                        });
-                    });
-                })
-                .on("error", (err) => {
+              .on("ready", () => {
+                conn.exec(cmd, (err, stream) => {
+                  if (err) {
                     clearTimeout(timer);
-                    done(err);
-                })
-                .connect({
-                    host,
-                    port,
-                    username,
-                    password,
-                    readyTimeout,
-                    hostVerifier: () => true,
+                    return done(err);
+                  }
+          
+                  let stdout = "";
+                  let stderr = "";
+          
+                  stream.on("data", (d) => (stdout += d.toString()));
+                  stream.stderr.on("data", (d) => (stderr += d.toString()));
+          
+                  stream.on("close", (code, signal) => {
+                    clearTimeout(timer);
+                    done(null, {
+                      stdout,
+                      stderr,
+                      code: typeof code === "number" ? code : null,
+                      signal: signal ?? null,
+                    });
+                  });
                 });
+              })
+              .on("error", (err) => {
+                clearTimeout(timer);
+                done(err);
+              })
+              .connect({
+                host,
+                port,
+                username,
+                password,
+                readyTimeout,
+                hostVerifier: () => true,
+              });
         });
+  
     }
 }
 

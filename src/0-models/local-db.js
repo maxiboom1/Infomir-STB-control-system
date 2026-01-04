@@ -63,9 +63,8 @@ const constants = Object.freeze({
     PLAY_PAUSE: altSuffix + "82",
     STOP:       altSuffix + "83",
 
-    // POWER appears as 85 (0x55) with ALT
-    POWER: altSuffix + "85",
-    //POWER: suffix + "0x55",
+    // POWER has a special syntax - so i hardcare this case
+    POWER: "sendqtevent -a -kqt 0x55 -ks 0x75",
     }),
 
 
