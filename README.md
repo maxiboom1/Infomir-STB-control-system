@@ -77,6 +77,10 @@ SSH access is critical for remote control:
 
 ## Changelog
 
+### v0.8.6.3 — 2026-01-04
+- Backend SSH: per-device (host) busy flag; Bug fixed.
+- Added correct POWER command.
+
 ### v0.8.6.2 — 2026-01-01
 - Admin Devices: restyled filter controls into a single row (Search left + Zone filter right).
 - Admin Devices: removed “show categories” toggle and removed “Zone filter” label (default option is “All zones”).
@@ -85,7 +89,3 @@ SSH access is critical for remote control:
 - Admin: accordion panes behave as single-open; switching tabs closes all panes.
 - Admin Devices: added zone filter dropdown + “show categories” toggle (state resets on page refresh; no localStorage).
 - Backend SSH: per-device (host) busy flag; drop commands while busy (returns HTTP 409).
-
-### v0.8.6.1 — 2026-01-04
-- Backend SSH: per-device (host) busy flag; Bug fixed.
-- Added correct POWER command.
