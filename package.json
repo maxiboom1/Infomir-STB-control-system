@@ -4,11 +4,11 @@
   "description": "",
   "type": "module",
   "main": "app.js",
-  "bin": "bootstrap.cjs",
+  "bin": "build/app.cjs",
   "scripts": {
     "dev": "nodemon app.js",
     "start": "node app.js",
-    "build:exe": "pkg . --targets node18-win-x64 --output dist/mag-control.exe"
+    "build:exe": "node scripts/build-cjs.mjs && pkg . --targets node18-win-x64 --output dist/mag-control.exe"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +21,7 @@
     "ssh2": "^1.17.0"
   },
   "devDependencies": {
+    "esbuild": "^0.27.2",
     "nodemon": "^3.1.10",
     "pkg": "^5.8.1"
   },

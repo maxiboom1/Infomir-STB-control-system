@@ -82,14 +82,16 @@ This project is designed to run as a **local server + local web UI**:
 If `config.json` is missing, the app will **auto-create a template** in the EXE folder and exit.
 Edit it and restart.
 
+## Build Windows EXE (pkg)
+
+### Prerequisites
+- Node.js 18.x
+- SQL Server installed and reachable (site environment)
+
 ### Build
 ```bash
 npm install
 npm run build:exe
-```
-
-The EXE will be created at:
-- `dist/mag-control.exe`
 
 ### Run
 1) Put these in the same folder:
@@ -107,6 +109,15 @@ Logs will be written to:
 ## Change log
 
 ## Changelog
+
+### v1.0.2 - 2026-01-05
+- Windows EXE packaging stabilized for ESM project:
+  - Added CJS build step using `esbuild` to output `build/app.cjs`.
+  - `pkg` now packages the CommonJS bundle instead of trying to run ESM directly.
+  - Updated `build:exe` pipeline to: `node scripts/build-cjs.mjs` → `pkg`.
+- Clarified runtime filesystem contract for production:
+  - `config.json` is read from the EXE folder (auto-created template if missing, then app exits).
+  - Logs are written to `./logs` next to the EXE (daily files).
 
 ### v1.0.0 — 2026-01-05
 - Packaging-ready: static UI assets can be embedded into the Windows EXE via `pkg`.

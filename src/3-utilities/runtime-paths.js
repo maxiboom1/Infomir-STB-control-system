@@ -1,21 +1,27 @@
 import path from "path";
-import { fileURLToPath } from "url";
 
-// Resolve paths safely for both:
-//  - dev (node): external root = process.cwd() (where you start the app)
-//  - packaged (pkg): external root = folder containing the exe
-// Internal root always follows the code location (so static assets resolve correctly).
+function getPkgInternalRoot() {
+  // process.pkg.entrypoint points to snapshot entry file, e.g.:
+  // C:\snapshot\Infomir-STB-control-system\build\app.cjs
+  const ep = process.pkg?.entrypoint;
+  if (!ep) return null;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+  const epDir = path.dirname(ep);
+  // if entry is inside \build, internal root is its parent
+  if (path.basename(epDir).toLowerCase() === "build") {
+    return path.dirname(epDir);
+  }
+  return epDir;
+}
 
-// This file lives in: <internalRoot>/src/3-utilities
-const INTERNAL_ROOT = path.resolve(__dirname, "..", "..");
+const INTERNAL_ROOT = process.pkg
+  ? (getPkgInternalRoot() || process.cwd())
+  : process.cwd();
 
 // External root (where config/logs live)
 const EXTERNAL_ROOT = process.pkg
   ? path.dirname(process.execPath)
-  : path.resolve(process.cwd());
+  : process.cwd();
 
 export function isPackaged() {
   return Boolean(process.pkg);
