@@ -281,7 +281,11 @@ class AppService {
             const affected = await sqlService.deleteUser(uid);
             if (!affected) return { ok: false, status: 404, message: "User not found" };
             return { ok: true, message: "User deleted" };
-        } catch {
+        } catch (err) {
+            // MSSQL FK violation (e.g. user still referenced by user_zones)
+            if (err?.number === 547 && String(err?.message || "").includes("FK_user_zones_user")) {
+                return { ok: false, status: 409, message: "User has assigned zones. Remove permissions first." };
+            }
             return { ok: false, status: 500, message: "Delete failed" };
         }
     }

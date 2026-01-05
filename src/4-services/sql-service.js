@@ -273,12 +273,29 @@ class SqlService {
   }
 
   async deleteUser(id) {
+    // Delete assignments first to avoid FK violation (FK_user_zones_user).
+    // Keep affected count for the user row only.
     const sqlQuery = `
-      DELETE FROM dbo.[users]
-      WHERE id = @id;
+      BEGIN TRY
+        BEGIN TRAN;
 
-      SELECT @@ROWCOUNT AS affected;
+        DELETE FROM dbo.[user_zones]
+        WHERE user_id = @id;
+
+        DELETE FROM dbo.[users]
+        WHERE id = @id;
+
+        DECLARE @affected INT = @@ROWCOUNT;
+        COMMIT;
+
+        SELECT @affected AS affected;
+      END TRY
+      BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK;
+        THROW;
+      END CATCH
     `;
+
     const result = await db.execute(sqlQuery, { id });
     return result?.recordset?.[0]?.affected ?? 0;
   }

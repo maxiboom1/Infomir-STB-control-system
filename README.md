@@ -77,6 +77,10 @@ SSH access is critical for remote control:
 
 ## Changelog
 
+### v0.8.6.4 — 2026-01-04
+- Users: deleting a user now also removes its user→zone assignments (prevents FK conflict).
+- Users: improved backend error handling for MSSQL FK violations (error 547) to return a clear message.
+
 ### v0.8.6.3 — 2026-01-04
 - Backend SSH: per-device (host) busy flag; Bug fixed.
 - Added correct POWER command.

@@ -1,3 +1,12 @@
+Version: v0.8.6.4
+Date: 2026-01-04
+Done:
+- Users: delete user now deletes user_zones assignments first (no FK conflict).
+- Users: friendly handling for MSSQL FK violation (error 547 / FK_user_zones_user) during delete.
+Notes:
+- This keeps DB FK constraints intact while making admin UX smoother.
+----------------------------------------
+
 Version: v0.8.6.2
 Date: 2026-01-01
 Done:
