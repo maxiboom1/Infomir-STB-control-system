@@ -4,3 +4,4 @@ uploads/
 logs/
 dist/
 build/
+config.json
