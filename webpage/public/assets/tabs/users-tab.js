@@ -34,6 +34,29 @@ export function initUsersTab(shared) {
     return cn ? `${cn} / ${z.name}` : String(z.name || "");
   }
 
+  function makeZoneRow(z, isActive) {
+    const row = document.createElement("div");
+    row.className = "vitem" + (isActive ? " active" : "");
+    row.dataset.id = String(z.id);
+
+    const left = document.createElement("div");
+    left.textContent = String(z.name || "");
+
+    const right = document.createElement("div");
+    const catName = z.category_name ? String(z.category_name) : "";
+    if (catName) {
+      right.className = "badge badge-tag";
+      right.textContent = catName;
+    } else {
+      right.className = "muted";
+      right.textContent = "";
+    }
+
+    row.appendChild(left);
+    row.appendChild(right);
+    return row;
+  }
+
   function renderUserList() {
     const listEl = $("user-list");
     if (!listEl) return;
@@ -112,11 +135,7 @@ export function initUsersTab(shared) {
       availEl.appendChild(empty);
     } else {
       for (const z of available) {
-        const row = document.createElement("div");
-        row.className = "vitem" + (state.selectedAvailZoneId === Number(z.id) ? " active" : "");
-        row.dataset.id = String(z.id);
-        row.textContent = zoneDisplay(z);
-        availEl.appendChild(row);
+        availEl.appendChild(makeZoneRow(z, state.selectedAvailZoneId === Number(z.id)));
       }
     }
 
@@ -128,11 +147,7 @@ export function initUsersTab(shared) {
       asgEl.appendChild(empty);
     } else {
       for (const z of assigned) {
-        const row = document.createElement("div");
-        row.className = "vitem" + (state.selectedAssignedZoneId === Number(z.id) ? " active" : "");
-        row.dataset.id = String(z.id);
-        row.textContent = zoneDisplay(z);
-        asgEl.appendChild(row);
+        asgEl.appendChild(makeZoneRow(z, state.selectedAssignedZoneId === Number(z.id)));
       }
     }
   }

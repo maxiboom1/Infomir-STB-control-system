@@ -77,6 +77,10 @@ SSH access is critical for remote control:
 
 ## Changelog
 
+### v0.8.6.6 — 2026-01-05
+- User UI: footer stays pinned to bottom even before selecting a device (Devices view with keypad still closed).
+- Admin Users: improved zone assignment lists — zone name on the left + category badge on the right.
+
 ### v0.8.6.5 — 2026-01-05
 - User UI: renamed POWER OFF button label to POWER.
 - User UI: improved dark styling for native selects (including mobile device picker where supported).

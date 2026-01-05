@@ -1,3 +1,12 @@
+Version: v0.8.6.6
+Date: 2026-01-05
+Done:
+- User UI: footer stays pinned to the bottom in Devices view even before selecting a device (drawer stays in layout, hidden until device selection).
+- Admin Users: zone assignment lists show zone name (left) + category badge (right, dark green).
+Notes:
+- Drawer is hidden via visibility so it still fills space and keeps the footer pinned.
+----------------------------------------
+
 Version: v0.8.6.5
 Date: 2026-01-05
 Done:

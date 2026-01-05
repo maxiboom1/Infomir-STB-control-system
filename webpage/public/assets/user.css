@@ -200,7 +200,12 @@ body[data-view="devices"] .main{
   backdrop-filter:blur(10px);
   padding-bottom:env(safe-area-inset-bottom);
 }
-body[data-view="devices"] .drawer[data-open="true"]{display:flex; flex:1 1 auto}
+
+/* In Devices view we want the footer pinned to the bottom even BEFORE a device is selected.
+   So we keep the drawer in the layout as a flex filler, and only hide its contents when closed. */
+body[data-view="devices"] .drawer{display:flex; flex:1 1 auto}
+body[data-view="devices"] .drawer[data-open="false"]{visibility:hidden; pointer-events:none}
+body[data-view="devices"] .drawer[data-open="true"]{visibility:visible; pointer-events:auto}
 
 .key{
   border:1px solid rgba(255,255,255,.10);
