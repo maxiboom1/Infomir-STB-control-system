@@ -1,3 +1,13 @@
+Version: v0.8.6.5
+Date: 2026-01-05
+Done:
+- User UI: rename POWER OFF button label to POWER.
+- User UI: better dark styling hint for native selects (color-scheme: dark + select styling) including the mobile device picker.
+- User UI: keypad no longer gets hidden behind the footer on small screens (footer stays in layout; keypad uses safe-area bottom padding).
+Notes:
+- Some mobile OS dropdown pickers may still show a native white list when opened; closed control is always dark.
+----------------------------------------
+
 Version: v0.8.6.4
 Date: 2026-01-04
 Done:

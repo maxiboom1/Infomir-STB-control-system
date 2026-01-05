@@ -77,6 +77,11 @@ SSH access is critical for remote control:
 
 ## Changelog
 
+### v0.8.6.5 — 2026-01-05
+- User UI: renamed POWER OFF button label to POWER.
+- User UI: improved dark styling for native selects (including mobile device picker where supported).
+- User UI: ensured keypad is not hidden by footer on small screens (no overlap; safe-area padding).
+
 ### v0.8.6.4 — 2026-01-04
 - Users: deleting a user now also removes its user→zone assignments (prevents FK conflict).
 - Users: improved backend error handling for MSSQL FK violations (error 547) to return a clear message.
