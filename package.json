@@ -4,6 +4,7 @@
   "description": "",
   "type": "module",
   "main": "app.js",
+  "bin": "bootstrap.cjs",
   "scripts": {
     "dev": "nodemon app.js",
     "start": "node app.js",
@@ -25,10 +26,7 @@
   },
   "pkg": {
     "assets": [
-      "webpage/**/*",
-      "Documents/**/*",
-      "README.md",
-      "VERSION.md"
+      "webpage/**/*"
     ]
   }
 }
