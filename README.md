@@ -72,10 +72,48 @@ SSH access is critical for remote control:
 
 ---
 
+## Build Windows EXE (pkg)
+
+This project is designed to run as a **local server + local web UI**:
+- The UI assets (`webpage/...`) are bundled into the EXE (served internally by Express).
+- `config.json` and the `./logs` folder live next to the EXE.
+
+### First run behavior
+If `config.json` is missing, the app will **auto-create a template** in the EXE folder and exit.
+Edit it and restart.
+
+### Build
+```bash
+npm install
+npm run build:exe
+```
+
+The EXE will be created at:
+- `dist/mag-control.exe`
+
+### Run
+1) Put these in the same folder:
+   - `mag-control.exe`
+   - `config.json`
+2) Run the EXE (console app).
+3) Open:
+   - `http://localhost:3000/` (or your configured port)
+
+Logs will be written to:
+- `./logs/YYYY-MM-DD.log`
+
+---
+
 ## Change log
 
-
 ## Changelog
+
+### v1.0.0 — 2026-01-05
+- Packaging-ready: static UI assets can be embedded into the Windows EXE via `pkg`.
+- Runtime paths hardened: UI assets are served from internal bundled paths; `config.json` and `./logs` are read/written next to the EXE.
+- Startup behavior: if `config.json` is missing, a template is auto-created and the app exits with a clear message.
+- Logging: all logs are written to daily files under `./logs/YYYY-MM-DD.log`.
+- Backend: added centralized Express error middleware + async route wrapper to prevent unhandled async crashes.
 
 ### v0.8.6.6 — 2026-01-05
 - User UI: footer stays pinned to bottom even before selecting a device (Devices view with keypad still closed).

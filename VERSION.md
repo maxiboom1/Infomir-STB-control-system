@@ -1,3 +1,15 @@
+Version: v1.0.0
+Date: 2026-01-05
+Done:
+- Packaging prep (pkg): assets list + build script added (creates `dist/mag-control.exe`).
+- Runtime paths: internal UI assets served from bundled paths; external files (config/logs) resolve to EXE folder.
+- Config: if `config.json` is missing, a template is auto-created in the EXE folder and the app exits with a clear message.
+- Logger: logs are written to daily files in `./logs/YYYY-MM-DD.log` (folder auto-created).
+- Backend stability: centralized Express error middleware + async route wrapper.
+Notes:
+- `config.json` stays next to the EXE (not bundled). First run can generate the template.
+----------------------------------------
+
 Version: v0.8.6.6
 Date: 2026-01-05
 Done:

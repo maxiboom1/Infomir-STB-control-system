@@ -9,14 +9,46 @@
  *                                   'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'.
  *                                   If the color is not recognized, the message will be logged without any color.
  */
+import { appendFileSync, mkdirSync } from "fs";
+import path from "path";
+import { getExternalPath } from "./runtime-paths.js";
+
+let _logDirReady = false;
+
+function ensureLogDir() {
+    if (_logDirReady) return;
+    const dir = getExternalPath("logs");
+    mkdirSync(dir, { recursive: true });
+    _logDirReady = true;
+}
+
+function getLogFilePath() {
+    // YYYY-MM-DD.log
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return path.join(getExternalPath("logs"), `${y}-${m}-${d}.log`);
+}
+
 function logger(msg, color = "white"){
-    
-    if (colors[color] === undefined) { // If color arg wrong or unsupported
-        console.log(`${getCurrentDateTime()}  ${msg}`);
+    ensureLogDir();
+
+    const line = `${getCurrentDateTime()}  ${msg}`;
+
+    // Console
+    if (colors[color] === undefined) {
+        console.log(line);
     } else {
-        console.log(`${getCurrentDateTime()} ${colors[color]}%s${colors.reset}`,`${msg}`);
+        console.log(`${getCurrentDateTime()} ${colors[color]}%s${colors.reset}`, `${msg}`);
     }
-    
+
+    // File (plain text, no ANSI)
+    try {
+        appendFileSync(getLogFilePath(), line + "\n", "utf8");
+    } catch {
+        // do not crash app on logging failure
+    }
 }
 
 function getCurrentDateTime() {

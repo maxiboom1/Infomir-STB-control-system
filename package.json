@@ -5,7 +5,9 @@
   "type": "module",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "build:exe": "pkg . --targets node18-win-x64 --output dist/mag-control.exe"
   },
   "keywords": [],
   "author": "",
@@ -16,5 +18,17 @@
     "jsonwebtoken": "^9.0.3",
     "mssql": "^10.0.1",
     "ssh2": "^1.17.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [
+      "webpage/**/*",
+      "Documents/**/*",
+      "README.md",
+      "VERSION.md"
+    ]
   }
 }
