@@ -13,7 +13,7 @@ router.post("/send", requireAuth, asyncHandler(async (req, res) => {
     const data = req.body;
     const deviceId = data.deviceId;
     const cmd = String(data.command).toUpperCase();
-    const result = await appService.sendCommand(deviceId, cmd);
+    const result = await appService.sendCommand(deviceId, cmd, req.user);
     res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
 }));
 

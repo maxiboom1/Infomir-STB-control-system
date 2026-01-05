@@ -1,3 +1,13 @@
+Version: v1.0.3
+Date: 2026-01-05
+Done:
+- Added detailed STB action logging: every send command now logs SEND / OK / FAIL / BUSY-DROP (with user + device info).
+- Improved fatal error behavior for Windows EXE: on startup/runtime fatal errors, console stays open (Pause) so the error can be read.
+- User UI: About modal now shows the I/O Systems logo and updated version string.
+Notes:
+- Pause is enabled by default only in packaged EXE (pkg). You can force it in dev using MAG_PAUSE_ON_EXIT=1.
+----------------------------------------
+
 Version: v1.0.0
 Date: 2026-01-05
 Done:

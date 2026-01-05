@@ -110,6 +110,11 @@ Logs will be written to:
 
 ## Changelog
 
+### v1.0.3 - 2026-01-05
+- Added detailed STB command logs (SEND / OK / FAIL / BUSY-DROP) including user + device details.
+- Improved fatal error experience in the Windows EXE: if the app stops due to a fatal error (startup/runtime), the console stays open so the error can be read.
+- User UI: About modal now includes the company logo and updated version string.
+
 ### v1.0.2 - 2026-01-05
 - Windows EXE packaging stabilized for ESM project:
   - Added CJS build step using `esbuild` to output `build/app.cjs`.

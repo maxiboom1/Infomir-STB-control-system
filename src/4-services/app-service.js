@@ -396,18 +396,35 @@ class AppService {
 
 /* =========================User commands to device========================= */
 
-    async sendCommand(deviceId, command) {
+    async sendCommand(deviceId, command, user) {
+        const cmdKey = String(command || "").toUpperCase();
+        const userTag = user
+            ? `${user.username ?? ""}#${user.uid ?? user.id ?? ""}(${user.role ?? ""})`
+            : "unknown";
+
+        // Resolve device first (and log validation errors too)
+        const device = await sqlService.getDeviceById(deviceId);
+        if (!device) {
+            logger(`[STB] DENY user=${userTag} deviceId=${deviceId} cmd=${cmdKey} -> not found`, "yellow");
+            return { ok: false, status: 404, message: `Device not found: ${deviceId}` };
+        }
+        if (!device.ip) {
+            logger(`[STB] ERROR user=${userTag} deviceId=${deviceId} name=${device.name} -> missing IP`, "red");
+            return { ok: false, status: 500, message: `Device has no IP: ${deviceId}` };
+        }
+
+        const cmd = constants.commands[cmdKey];
+        if (!cmd) {
+            logger(`[STB] DENY user=${userTag} deviceId=${deviceId} name=${device.name} ip=${device.ip} cmd=${cmdKey} -> unsupported`, "yellow");
+            return { ok: false, status: 400, message: `Unsupported command: ${cmdKey}` };
+        }
+
+        const t0 = Date.now();
+        logger(`[STB] SEND user=${userTag} deviceId=${device.id} name="${device.name}" ip=${device.ip} cmd=${cmdKey}`, "cyan");
+
+        let result;
         try {
-            const cmdKey = String(command || "").toUpperCase();
-
-            const device = await sqlService.getDeviceById(deviceId);
-            if (!device) return { ok: false, status: 404, message: `Device not found: ${deviceId}` };
-            if (!device.ip) return { ok: false, status: 500, message: `Device has no IP: ${deviceId}` };
-
-            const cmd = constants.commands[cmdKey];
-            if (!cmd) return { ok: false, status: 400, message: `Unsupported command: ${cmdKey}` };
-
-            const result = await sshService.exec({
+            result = await sshService.exec({
                 host: device.ip,
                 port: constants.ssh.port,
                 username: constants.ssh.username,
@@ -415,21 +432,33 @@ class AppService {
                 cmd,
                 readyTimeout: 4000,
             });
-            //{ host, port, username, password, cmd }
-            if (result?.busy) {
-                return { ok: false, status: 409, message: `Device busy` };
-            }
-
-            // sendqtevent often returns empty stdout; success is exit code 0 or null
-            if (result?.code !== null && result.code !== 0) {
-                return { ok: false, status: 500, message: `Command failed (exit ${result.code})`, ...result };
-            }
-
-            return { ok: true, message: `Sent ${cmdKey} to ${device.name} (${device.ip})`, ...result };
-
         } catch (err) {
+            const dt = Date.now() - t0;
+            logger(`[STB] FAIL user=${userTag} deviceId=${device.id} ip=${device.ip} cmd=${cmdKey} ms=${dt} err="${err?.message || err}"`, "red");
             return { ok: false, status: 500, message: `Send failed: ${err.message}` };
         }
+
+        if (result?.busy) {
+            logger(`[STB] BUSY-DROP user=${userTag} deviceId=${device.id} ip=${device.ip} cmd=${cmdKey}`, "yellow");
+            return { ok: false, status: 409, message: `Device busy` };
+        }
+
+        const dt = Date.now() - t0;
+
+        // sendqtevent often returns empty stdout; success is exit code 0 or null
+        if (result?.code !== null && result.code !== 0) {
+            const stderr = String(result?.stderr || "").trim();
+            const stderrShort = stderr.length > 240 ? (stderr.slice(0, 240) + "…") : stderr;
+            logger(
+                `[STB] FAIL user=${userTag} deviceId=${device.id} ip=${device.ip} cmd=${cmdKey} ms=${dt} exit=${result.code}` +
+                (stderrShort ? ` stderr="${stderrShort}"` : ""),
+                "red"
+            );
+            return { ok: false, status: 500, message: `Command failed (exit ${result.code})`, ...result };
+        }
+
+        logger(`[STB] OK user=${userTag} deviceId=${device.id} ip=${device.ip} cmd=${cmdKey} ms=${dt}`, "green");
+        return { ok: true, message: `Sent ${cmdKey} to ${device.name} (${device.ip})`, ...result };
     }
 
 }

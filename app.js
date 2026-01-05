@@ -5,6 +5,8 @@ import logMessages from "./src/3-utilities/logger-messages.js";
 import { requirePageAuth } from "./src/2-middleware/auth-middleware.js";
 import { errorMiddleware } from "./src/2-middleware/error-middleware.js";
 import { getInternalPath } from "./src/3-utilities/runtime-paths.js";
+import logger from "./src/3-utilities/logger.js";
+import { pauseThenExitIfNeeded } from "./src/3-utilities/pause-console.js";
 
 const app = express();
 
@@ -28,11 +30,25 @@ app.use(errorMiddleware);
 
 // Do not crash silently on unhandled errors
 process.on("unhandledRejection", (reason) => {
-  try { console.error("[UNHANDLED REJECTION]", reason); } catch {}
+  try {
+    const msg = (reason instanceof Error)
+      ? `${reason.name}: ${reason.message}`
+      : String(reason);
+    logger(`[FATAL] Unhandled rejection: ${msg}`, "red");
+    if (reason?.stack) logger(String(reason.stack), "dimmed");
+  } catch {}
+  pauseThenExitIfNeeded(1, "\nMAG Control stopped due to a fatal error.");
 });
 
 process.on("uncaughtException", (err) => {
-  try { console.error("[UNCAUGHT EXCEPTION]", err); } catch {}
+  try {
+    const msg = (err instanceof Error)
+      ? `${err.name}: ${err.message}`
+      : String(err);
+    logger(`[FATAL] Uncaught exception: ${msg}`, "red");
+    if (err?.stack) logger(String(err.stack), "dimmed");
+  } catch {}
+  pauseThenExitIfNeeded(1, "\nMAG Control stopped due to a fatal error.");
 });
 
 app.listen(appConfig.appPort, () => { logMessages.appLoadedMessage(); });

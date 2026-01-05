@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "fs";
 import logger from "./logger.js";
 import { ensureConfigFile } from "./config-template.js";
 import { getExternalPath } from "./runtime-paths.js";
+import { pauseThenExitIfNeeded } from "./pause-console.js";
 
 const CONFIG_PATH = getExternalPath("config.json");
 
@@ -12,12 +13,12 @@ if (ensure.created) {
     `[SYSTEM] config.json was not found. A template was created at: ${CONFIG_PATH}. Please edit it and restart the app.`,
     "yellow"
   );
-  process.exit(1);
+  pauseThenExitIfNeeded(1);
 }
 
 if (!existsSync(CONFIG_PATH)) {
   logger(`[SYSTEM] Missing config.json at: ${CONFIG_PATH}`, "red");
-  process.exit(1);
+  pauseThenExitIfNeeded(1);
 }
 
 let parsed;
@@ -26,7 +27,7 @@ try {
   parsed = JSON.parse(raw);
 } catch (err) {
   logger(`[SYSTEM] Failed to read/parse config.json (${CONFIG_PATH}): ${err}`, "red");
-  process.exit(1);
+  pauseThenExitIfNeeded(1);
 }
 
 // ***************** App Advanced Configuration ***************** //
@@ -34,13 +35,13 @@ try {
 const appConfig = parsed;
 
 // App Version
-appConfig.version = "1.0.0";
+appConfig.version = "1.0.3";
 
 // HTTP
 appConfig.appPort = Number(appConfig.appPort ?? 3000);
 if (!Number.isFinite(appConfig.appPort) || appConfig.appPort <= 0) {
   logger(`[SYSTEM] Invalid appPort in config.json: ${appConfig.appPort}`, "red");
-  process.exit(1);
+  pauseThenExitIfNeeded(1);
 }
 
 export default appConfig;
