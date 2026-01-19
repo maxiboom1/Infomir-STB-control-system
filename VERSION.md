@@ -1,3 +1,13 @@
+Version: v1.2.0
+Date: 2026-01-19
+Done:
+- Added Channels map (1..64) — Admin can set friendly names; Operator UI shows only named channels in "Channels" mode.
+- Added Channel macro execution: digits + configurable delays + OK (0x01000004) over a single SSH connection.
+- Added config.json parameters: macroDigitDelayMs (default 150) and macroEnterDelayMs (default 250).
+Notes:
+- Macro execution awaits each SSH exec completion; per-host busy-drop still applies.
+----------------------------------------
+
 Version: v1.1.1
 Date: 2026-01-19
 Done:

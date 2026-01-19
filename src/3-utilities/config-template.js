@@ -16,6 +16,11 @@ export function createConfigTemplate() {
     jwtSecret: "CHANGE_ME__LONG_RANDOM_STRING",
     jwtCookieName: "mag_auth",
     jwtExpiresMinutes: 30,
+
+    // Macros (Channel list)
+    // Delay between digits and before OK/ENTER
+    macroDigitDelayMs: 150,
+    macroEnterDelayMs: 250,
   };
 }
 

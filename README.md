@@ -110,6 +110,12 @@ Logs will be written to:
 
 ## Changelog
 
+### v1.2.0 - 2026-01-19
+- New: Channels map (1..64) admin tab — configure friendly names for channel macros.
+- Operator UI: added "Channels" mode (only named channels are shown).
+- Backend: channel macro execution runs digits + configurable delays + OK over a single SSH connection.
+- Config: new parameters `macroDigitDelayMs` (default 150) and `macroEnterDelayMs` (default 250).
+
 ### v1.1.1 - 2026-01-19
 - User UI (desktop): device grid now omits EMPTY cells per row while preserving the original row assignment (row 0 stays row 0, row 1 stays row 1).
 - User UI (desktop): fixed device selection click handling for the new grid buttons.

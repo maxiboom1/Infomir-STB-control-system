@@ -460,6 +460,29 @@ class SqlService {
     }
     return count;
   }
+
+  /* =========================CHANNELS MAP========================= */
+
+  async getChannelsMap() {
+    const sqlQuery = `
+      SELECT channel_number, name
+      FROM dbo.[channels_map]
+      ORDER BY channel_number;
+    `;
+    const result = await db.execute(sqlQuery);
+    return result?.recordset || [];
+  }
+
+  async updateChannelName(channelNumber, name) {
+    const sqlQuery = `
+      UPDATE dbo.[channels_map]
+      SET name = @name
+      WHERE channel_number = @channel_number;
+      SELECT @@ROWCOUNT AS affected;
+    `;
+    const result = await db.execute(sqlQuery, { channel_number: channelNumber, name });
+    return result?.recordset?.[0]?.affected ?? 0;
+  }
 }
 
 export default new SqlService();

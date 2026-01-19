@@ -10,6 +10,7 @@
 import { initCatZonesTab } from "./tabs/catzones-tab.js";
 import { initDevicesTab } from "./tabs/devices-tab.js";
 import { initUsersTab } from "./tabs/users-tab.js";
+import { initChannelsTab } from "./tabs/channels-tab.js";
 
 /* =========================
    Shared helpers
@@ -84,6 +85,7 @@ const panels = Array.from(document.querySelectorAll(".tab-panel[data-panel]"));
 const controllers = {
   devices: null,
   catzones: null,
+  channels: null,
   users: null,
 };
 
@@ -92,6 +94,7 @@ function ensureController(tabName) {
 
   if (tabName === "devices") controllers.devices = initDevicesTab(shared);
   else if (tabName === "catzones") controllers.catzones = initCatZonesTab(shared);
+  else if (tabName === "channels") controllers.channels = initChannelsTab(shared);
   else if (tabName === "users") controllers.users = initUsersTab(shared);
 
   return controllers[tabName];

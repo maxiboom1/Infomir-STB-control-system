@@ -388,6 +388,12 @@ body{
     background: rgba(79,140,255,0.10);
     outline: 1px solid rgba(79,140,255,0.35);
   }
+
+  /* Channels map rows */
+  .ch-row{ align-items:center; }
+  .ch-left{ width:70px; display:flex; justify-content:flex-start; }
+  .ch-right{ flex:1; }
+  .ch-input.dirty{ outline: 1px solid rgba(79,140,255,0.45); }
   
   .vitem .muted{
     opacity:0.75;

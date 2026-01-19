@@ -21,6 +21,9 @@ const btnOpen = document.getElementById("btn-open");
 const elDrawer = document.getElementById("drawer");
 const elStatus = document.getElementById("status");
 const elKeypad = document.getElementById("keypad");
+const elChannels = document.getElementById("channels");
+const btnModeKeypad = document.getElementById("btn-mode-keypad");
+const btnModeChannels = document.getElementById("btn-mode-channels");
 
 // Mobile-only device picker (shown only on small screens in Devices view)
 const elDevicePicker = document.getElementById("device-picker");
@@ -32,11 +35,13 @@ const btnAboutClose = document.getElementById("about-close");
 
 const state = {
   tree: null,
+  channelsMap: null,
   view: "start", // start | devices
   selectedCategoryId: null,
   selectedZoneId: null,
   selectedDeviceId: null,
   suppressZoneAutoOpen: false,
+  drawerMode: "keypad", // keypad | channels
 };
 
 function isMobile() {
@@ -48,6 +53,18 @@ function setStatus(msg, isError = false) {
   elStatus.textContent = msg || "";
   // footer default is green; errors can be red
   elStatus.style.color = isError ? "#ff3b30" : "";
+}
+
+function setDrawerMode(mode) {
+  state.drawerMode = (mode === "channels") ? "channels" : "keypad";
+
+  btnModeKeypad?.classList.toggle("is-active", state.drawerMode === "keypad");
+  btnModeChannels?.classList.toggle("is-active", state.drawerMode === "channels");
+
+  if (elKeypad) elKeypad.hidden = (state.drawerMode !== "keypad");
+  if (elChannels) elChannels.hidden = (state.drawerMode !== "channels");
+
+  if (state.drawerMode === "channels") renderChannelsList();
 }
 
 function escapeHtml(s) {
@@ -83,6 +100,32 @@ async function api(path, options) {
 function openDrawer(open) {
   if (!elDrawer) return;
   elDrawer.dataset.open = open ? "true" : "false";
+}
+
+function renderChannelsList() {
+  if (!elChannels) return;
+  const channels = Array.isArray(state.channelsMap) ? state.channelsMap : [];
+  const named = channels
+    .map(c => ({ channelNumber: Number(c?.channelNumber), name: String(c?.name || "").trim() }))
+    .filter(c => Number.isInteger(c.channelNumber) && c.channelNumber >= 1 && c.channelNumber <= 64)
+    .filter(c => c.name.length > 0)
+    .sort((a, b) => a.channelNumber - b.channelNumber);
+
+  if (!named.length) {
+    elChannels.innerHTML = `<div class="hint" style="opacity:.75; padding:8px 2px;">No channels named yet.</div>`;
+    return;
+  }
+
+  elChannels.innerHTML = `
+    <div class="channels-grid">
+      ${named.map(c => `
+        <button class="key ch-card" data-ch="${c.channelNumber}" aria-label="Channel ${c.channelNumber}">
+          <div class="ch-num">CH ${c.channelNumber}</div>
+          <div class="ch-name">${escapeHtml(c.name)}</div>
+        </button>
+      `).join("")}
+    </div>
+  `;
 }
 
 function currentCategory() {
@@ -319,6 +362,14 @@ async function loadTree() {
 
   state.tree = data.categories ? data : { categories: [] };
 
+  // Load channels map (names for 1..64)
+  try {
+    const ch = await api("/api/channels-map");
+    state.channelsMap = ch?.channels || [];
+  } catch {
+    state.channelsMap = [];
+  }
+
   // Init selections: pick first category + first zone automatically.
   const cats = state.tree.categories || [];
   state.selectedCategoryId = cats[0]?.id || null;
@@ -335,6 +386,28 @@ async function loadTree() {
 
   setStatus("Ready");
   setView("start");
+}
+
+async function sendChannelMacro(channelNumber) {
+  const dev = currentDevice();
+  if (!dev) return;
+
+  const num = Number(channelNumber);
+  if (!Number.isInteger(num) || num < 1 || num > 64) {
+    setStatus("Invalid channel", true);
+    return;
+  }
+
+  try {
+    setStatus(`Channel ${num}…`);
+    const res = await api("/api/channel-macro", {
+      method: "POST",
+      body: JSON.stringify({ deviceId: dev.id, channelNumber: num }),
+    });
+    setStatus(res?.message || `Sent channel ${num}`);
+  } catch (err) {
+    setStatus(err.message || "Macro failed", true);
+  }
 }
 
 async function sendCommand(cmd) {
@@ -371,6 +444,18 @@ btnBack?.addEventListener("click", () => {
   state.selectedDeviceId = null;
   openDrawer(false);
   setView("start");
+});
+
+// Drawer mode buttons
+btnModeKeypad?.addEventListener("click", () => setDrawerMode("keypad"));
+btnModeChannels?.addEventListener("click", () => setDrawerMode("channels"));
+
+// Channels list click (run macro)
+elChannels?.addEventListener("click", (e) => {
+  const btn = e.target?.closest?.("button.ch-card");
+  if (!btn) return;
+  const ch = Number(btn.dataset.ch);
+  sendChannelMacro(ch);
 });
 
 btnOpen?.addEventListener("click", () => {

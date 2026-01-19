@@ -2,6 +2,7 @@ import sqlService from "./sql-service.js";
 import sshService from "../1-dal/ssh.js";
 import constants from "../0-models/local-db.js";
 import logger from "../3-utilities/logger.js";
+import appConfig from "../3-utilities/app-config.js";
 import bcrypt from "bcryptjs";
 
 class AppService {
@@ -488,7 +489,101 @@ class AppService {
         }
     }
 
+    /* =========================Channels map (Admin)========================= */
+
+    async getChannelsMap() {
+        const rows = await sqlService.getChannelsMap();
+        const channels = (rows || []).map(r => ({
+            channelNumber: Number(r.channel_number),
+            name: String(r.name || "")
+        }));
+        return { ok: true, channels };
+    }
+
+    async updateChannelsMap(payload) {
+        const list = Array.isArray(payload?.channels) ? payload.channels : [];
+        // Accept partial updates; ignore invalid rows.
+        let changed = 0;
+        for (const item of list) {
+            const n = Number(item?.channelNumber);
+            if (!Number.isInteger(n) || n < 1 || n > 64) continue;
+            const name = String(item?.name ?? "").trim().substring(0, 64);
+            const affected = await sqlService.updateChannelName(n, name);
+            if (affected) changed += 1;
+        }
+        return { ok: true, changed, message: "Channels map updated" };
+    }
+
 /* =========================User commands to device========================= */
+
+    async runChannelMacro(deviceId, channelNumber, user) {
+        const num = Number(channelNumber);
+        const userTag = user
+            ? `${user.username ?? ""}#${user.uid ?? user.id ?? ""}(${user.role ?? ""})`
+            : "unknown";
+
+        if (!Number.isInteger(num) || num < 1 || num > 64) {
+            logger(`[MACRO] DENY user=${userTag} deviceId=${deviceId} channel=${channelNumber} -> invalid channel`, "yellow");
+            return { ok: false, status: 400, message: "Invalid channel number (1..64)" };
+        }
+
+        const device = await sqlService.getDeviceById(deviceId);
+        if (!device) {
+            logger(`[MACRO] DENY user=${userTag} deviceId=${deviceId} channel=${num} -> device not found`, "yellow");
+            return { ok: false, status: 404, message: "Device not found" };
+        }
+        if (!device.ip) {
+            logger(`[MACRO] ERROR user=${userTag} deviceId=${deviceId} channel=${num} -> missing IP`, "red");
+            return { ok: false, status: 500, message: "Device has no IP" };
+        }
+
+        const digits = String(num).split("");
+        const steps = [];
+        for (let i = 0; i < digits.length; i++) {
+            const d = digits[i];
+            const cmd = constants.commands[d];
+            if (!cmd) {
+                logger(`[MACRO] ERROR user=${userTag} deviceId=${deviceId} channel=${num} -> unsupported digit ${d}`, "red");
+                return { ok: false, status: 500, message: `Unsupported digit: ${d}` };
+            }
+            const isLastDigit = (i === digits.length - 1);
+            steps.push({
+                cmd,
+                delayAfterMs: isLastDigit ? appConfig.macroEnterDelayMs : appConfig.macroDigitDelayMs,
+            });
+        }
+
+        // ENTER = OK (0x01000004)
+        steps.push({ cmd: constants.commands.OK, delayAfterMs: 0 });
+
+        const t0 = Date.now();
+        logger(`[MACRO] START user=${userTag} deviceId=${device.id} name="${device.name}" ip=${device.ip} channel=${num} digits=${digits.join("")}`, "cyan");
+
+        let result;
+        try {
+            result = await sshService.execSeries({
+                host: device.ip,
+                port: constants.ssh.port,
+                username: constants.ssh.username,
+                password: constants.ssh.password,
+                steps,
+                readyTimeout: 8000,
+            });
+        } catch (err) {
+            const dt = Date.now() - t0;
+            logger(`[MACRO] FAIL user=${userTag} deviceId=${device.id} ip=${device.ip} channel=${num} ms=${dt} err="${err?.message || err}"`, "red");
+            return { ok: false, status: 500, message: `Macro failed: ${err?.message || err}` };
+        }
+
+        if (result?.busy) {
+            logger(`[MACRO] BUSY-DROP user=${userTag} deviceId=${device.id} ip=${device.ip} channel=${num}`, "yellow");
+            return { ok: false, status: 409, message: "Device busy" };
+        }
+
+        const dt = Date.now() - t0;
+        logger(`[MACRO] OK user=${userTag} deviceId=${device.id} ip=${device.ip} channel=${num} ms=${dt}`, "green");
+        return { ok: true, message: `Channel ${num} macro sent to ${device.name} (${device.ip})` };
+    }
 
     async sendCommand(deviceId, command, user) {
         const cmdKey = String(command || "").toUpperCase();

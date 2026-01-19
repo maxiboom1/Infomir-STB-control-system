@@ -17,6 +17,24 @@ router.post("/send", requireAuth, asyncHandler(async (req, res) => {
     res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
 }));
 
+// Channel macro (digits + OK)
+router.post("/channel-macro", requireAuth, asyncHandler(async (req, res) => {
+    const { deviceId, channelNumber } = req.body || {};
+    const result = await appService.runChannelMacro(deviceId, channelNumber, req.user);
+    res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
+}));
+
+// Channels map (names for 1..64)
+router.get("/channels-map", requireAuth, asyncHandler(async (req, res) => {
+    const result = await appService.getChannelsMap();
+    return res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
+}));
+
+router.put("/channels-map", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+    const result = await appService.updateChannelsMap(req.body);
+    return res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
+}));
+
 router.get("/get-devices", requireAuth, asyncHandler(async (req, res) => {
     const devices = await appService.getAllStb();
     res.json({ ok: true, devices });

@@ -22,6 +22,7 @@
       <nav class="nav-tabs">
         <button class="nav-tab active" data-tab="catzones">Zones</button>
         <button class="nav-tab" data-tab="devices">Devices</button>
+        <button class="nav-tab" data-tab="channels">Channels map</button>
         <button class="nav-tab" data-tab="users">Users</button>
       </nav>
 
@@ -143,6 +144,48 @@
               </div>
             </details>
 
+          </section>
+        </div>
+      </section>
+
+      <!-- =========================
+           TAB: CHANNELS MAP
+           ========================= -->
+      <section class="tab-panel" data-panel="channels" style="display:none;">
+        <div class="page-header">
+          <h1>Channels map</h1>
+          <div class="page-hint">Assign friendly names to channels (1..64). Operators will see only named channels in the Channel list.</div>
+        </div>
+
+        <div class="split-2">
+          <section class="pane pane-scroll">
+            <details class="section acc" open>
+              <summary class="section-title">Channel names (1..64)</summary>
+              <div class="section-body">
+                <div class="filterbar">
+                  <input id="ch-search" class="input" type="text" placeholder="Search by name or number..." />
+                </div>
+
+                <div id="ch-list" class="vlist" aria-label="Channels"></div>
+
+                <div class="actions" style="margin-top:10px;">
+                  <button id="btn-ch-save" class="btn">Save</button>
+                  <button id="btn-ch-reload" class="btn">Refresh</button>
+                  <div id="ch-note" class="hint"></div>
+                </div>
+              </div>
+            </details>
+          </section>
+
+          <section class="pane">
+            <div class="pane-head">
+              <div class="pane-title">Notes</div>
+            </div>
+            <div class="section-body" style="padding: 14px;">
+              <div class="hint">• Macros are hardcoded: send digits then OK.</div>
+              <div class="hint">• Delays are configurable via <b>config.json</b>: macroDigitDelayMs and macroEnterDelayMs.</div>
+              <div class="hint">• Only channels with a non-empty name are shown in Operator "Channels" mode.</div>
+            </div>
           </section>
         </div>
       </section>

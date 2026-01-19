@@ -1,12 +1,13 @@
 ﻿/* =========================================================
    MAG-Control DB — MSSQL Create Script (DEV friendly)
-   Version: v1.1.0 (device grid positions 6x2 per zone)
+   Version: v1.2.0 (channels map + macros)
    Tables:
      - categories
      - zones
      - users
      - user_zones
      - devices
+     - channels_map
 
    Notes:
      - DEV script: drops & recreates DB
@@ -115,6 +116,32 @@ CREATE UNIQUE INDEX UX_devices_zone_pos
   WHERE pos_index IS NOT NULL;
 GO
 
+-- channels_map (admin-configured channel names for macros 1..64)
+CREATE TABLE dbo.channels_map (
+  id             INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_channels_map PRIMARY KEY,
+  channel_number INT                NOT NULL,
+  name           NVARCHAR(64)       NOT NULL CONSTRAINT DF_channels_map_name DEFAULT N''
+);
+GO
+
+-- Only 1..64 allowed and unique
+ALTER TABLE dbo.channels_map
+  ADD CONSTRAINT CK_channels_map_range CHECK (channel_number BETWEEN 1 AND 64);
+GO
+
+CREATE UNIQUE INDEX UX_channels_map_number ON dbo.channels_map(channel_number);
+GO
+
+-- Seed rows 1..64
+;WITH n AS (
+  SELECT TOP (64) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS i
+  FROM sys.all_objects
+)
+INSERT INTO dbo.channels_map(channel_number, name)
+SELECT i, N'' FROM n
+ORDER BY i;
+GO
+
 /* =======================
    Helpful indexes
    ======================= */
@@ -123,4 +150,5 @@ CREATE INDEX IX_devices_zone_id       ON dbo.devices(zone_id);
 CREATE INDEX IX_devices_zone_pos      ON dbo.devices(zone_id, pos_index);
 CREATE INDEX IX_user_zones_user_id    ON dbo.user_zones(user_id);
 CREATE INDEX IX_user_zones_zone_id    ON dbo.user_zones(zone_id);
+CREATE INDEX IX_channels_map_number   ON dbo.channels_map(channel_number);
 GO

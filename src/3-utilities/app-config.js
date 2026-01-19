@@ -35,12 +35,26 @@ try {
 const appConfig = parsed;
 
 // App Version
-appConfig.version = "1.1.1";
+appConfig.version = "1.2.0";
 
 // HTTP
 appConfig.appPort = Number(appConfig.appPort ?? 3000);
 if (!Number.isFinite(appConfig.appPort) || appConfig.appPort <= 0) {
   logger(`[SYSTEM] Invalid appPort in config.json: ${appConfig.appPort}`, "red");
+  pauseThenExitIfNeeded(1);
+}
+
+// Macros (Channel list)
+appConfig.macroDigitDelayMs = Number(appConfig.macroDigitDelayMs ?? 150);
+appConfig.macroEnterDelayMs = Number(appConfig.macroEnterDelayMs ?? 250);
+
+if (!Number.isFinite(appConfig.macroDigitDelayMs) || appConfig.macroDigitDelayMs < 0 || appConfig.macroDigitDelayMs > 5000) {
+  logger(`[SYSTEM] Invalid macroDigitDelayMs in config.json: ${appConfig.macroDigitDelayMs}`, "red");
+  pauseThenExitIfNeeded(1);
+}
+
+if (!Number.isFinite(appConfig.macroEnterDelayMs) || appConfig.macroEnterDelayMs < 0 || appConfig.macroEnterDelayMs > 5000) {
+  logger(`[SYSTEM] Invalid macroEnterDelayMs in config.json: ${appConfig.macroEnterDelayMs}`, "red");
   pauseThenExitIfNeeded(1);
 }
 

@@ -53,6 +53,13 @@
 
   <!-- Keypad panel (shown only in Devices view and only after a device is selected) -->
   <section id="drawer" class="drawer" aria-label="Keypad" data-open="false">
+    <div class="drawer-bar" aria-label="Drawer mode">
+      <button id="btn-mode-keypad" class="btn btn-mini is-active" type="button">Keypad</button>
+      <button id="btn-mode-channels" class="btn btn-mini" type="button">Channels</button>
+    </div>
+
+    <div id="channels" class="channels" hidden aria-label="Channels list"></div>
+
     <div id="keypad" class="keypad" aria-label="Remote keypad">
       <div class="kp">
 
@@ -128,7 +135,7 @@
     <div class="modal-backdrop" data-close="1"></div>
     <div class="modal-card" role="dialog" aria-modal="true" aria-label="About MAG Control">
       <div class="modal-title">Infomir MAG-STB Web Control</div>
-      <div class="modal-sub">Mag Set-Top-Boxes Web Control System — Version 1.1.1</div>
+      <div class="modal-sub">Mag Set-Top-Boxes Web Control System — Version 1.2.0</div>
       <div class="modal-body">
         
         <div>All rights reserved to RGE Group - Israel sport channel</div>
