@@ -1,5 +1,5 @@
 /**
- * channels-tab.js — Admin Channels map (v1.2.0)
+ * channels-tab.js — Admin Channels map (v1.2.1)
  *
  * - Admin can set friendly names for channels 1..64.
  * - Operator UI renders only named channels.

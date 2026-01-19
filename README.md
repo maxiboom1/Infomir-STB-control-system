@@ -110,6 +110,10 @@ Logs will be written to:
 
 ## Changelog
 
+### v1.2.1 - 2026-01-19
+- Operator UI: Channels list now uses the same width as the keypad, and Channels/Keypad toggling properly hides the other panel.
+- Admin UI: Channels map tab layout fixed (removed accidental accordion/details wrapper; buttons moved to the pane footer like the Devices list).
+
 ### v1.2.0 - 2026-01-19
 - New: Channels map (1..64) admin tab — configure friendly names for channel macros.
 - Operator UI: added "Channels" mode (only named channels are shown).

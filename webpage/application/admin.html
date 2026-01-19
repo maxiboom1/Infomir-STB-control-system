@@ -158,23 +158,23 @@
         </div>
 
         <div class="split-2">
-          <section class="pane pane-scroll">
-            <details class="section acc" open>
-              <summary class="section-title">Channel names (1..64)</summary>
-              <div class="section-body">
-                <div class="filterbar">
-                  <input id="ch-search" class="input" type="text" placeholder="Search by name or number..." />
-                </div>
-
-                <div id="ch-list" class="vlist" aria-label="Channels"></div>
-
-                <div class="actions" style="margin-top:10px;">
-                  <button id="btn-ch-save" class="btn">Save</button>
-                  <button id="btn-ch-reload" class="btn">Refresh</button>
-                  <div id="ch-note" class="hint"></div>
-                </div>
+          <section class="pane">
+            <div class="pane-head">
+              <div class="pane-title">Channel names (1..64)</div>
+              <div class="filterbar">
+                <input id="ch-search" class="input" type="text" placeholder="Search by name or number..." />
               </div>
-            </details>
+            </div>
+
+            <div id="ch-list" class="vlist" aria-label="Channels"></div>
+
+            <div class="pane-foot" style="justify-content:space-between; align-items:center; gap:10px;">
+              <div id="ch-note" class="hint"></div>
+              <div style="display:flex; gap:10px;">
+                <button id="btn-ch-save" class="btn">Save</button>
+                <button id="btn-ch-reload" class="btn">Refresh</button>
+              </div>
+            </div>
           </section>
 
           <section class="pane">

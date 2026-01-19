@@ -1,6 +1,6 @@
 ﻿/* =========================================================
    MAG-Control DB — MSSQL Create Script (DEV friendly)
-   Version: v1.2.0 (channels map + macros)
+   Version: v1.2.1 (UI hotfix; no schema changes vs v1.2.0)
    Tables:
      - categories
      - zones

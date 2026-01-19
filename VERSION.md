@@ -1,3 +1,13 @@
+Version: v1.2.1
+Date: 2026-01-19
+Done:
+- Operator UI: fixed Channels/Keypad toggle rendering; in Channels mode the keypad is properly hidden.
+- Operator UI: Channels list container now matches keypad width.
+- Admin UI: Channels map tab layout fixed (removed accidental <details> accordion; list + buttons now match Devices list style).
+Notes:
+- No backend or DB changes.
+----------------------------------------
+
 Version: v1.2.0
 Date: 2026-01-19
 Done:
