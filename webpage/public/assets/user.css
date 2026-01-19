@@ -140,6 +140,68 @@ body[data-view="devices"] .main{
   gap:14px;
   overflow:hidden;
 }
+
+/* Devices grid (desktop): 6x2 logical layout, but render only populated buttons per row.
+   This keeps row separation while omitting empty cells visually. */
+.device-grid{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.device-grid-row{
+  --cols:6;
+  --gap:10px;
+  display:flex;
+  flex-wrap:nowrap;
+  justify-content:flex-start;
+  gap:var(--gap);
+}
+
+/* Keep the same "cell" feel even when empty cells are omitted */
+.device-grid-row .dcell{
+  flex:0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));
+  min-width:0;
+}
+
+.dcell{
+  height:72px;
+  border-radius:16px;
+  border:2px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);
+  color:#fff;
+  cursor:pointer;
+  user-select:none;
+  box-shadow:var(--shadow);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px;
+  text-align:center;
+}
+
+.dcell.assigned{
+  background:rgba(0, 140, 70, 0.18); /* weak green */
+  border-color:rgba(0, 140, 70, 0.35);
+}
+
+.dcell.empty{
+  cursor:default;
+  opacity:0.65;
+}
+
+.dcell.is-selected{
+  outline:2px solid rgba(255,255,255,0.35);
+  outline-offset:2px;
+}
+
+.dcell-label{
+  font-size:13px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  width:100%;
+}
 .device-row .tile{
   flex:1 1 0;
   min-width:56px;

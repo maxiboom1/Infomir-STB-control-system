@@ -6,12 +6,42 @@ import bcrypt from "bcryptjs";
 
 class AppService {
 
+    // 6*2 grid = 12 cells
+    static GRID_CELLS = 12;
+
     /* =========================Devices========================= */
 
-    async addNewStb(device) { // Expected device { name, ip, zoneId }
+    async addNewStb(device) { // Expected device { name, ip, zoneId, posIndex }
         try {
-          const id = await sqlService.addNewDevice(device);
-          return { ok: true, id, message: `Device added: ${device.name}` };
+          const name = String(device?.name || "").trim();
+          const ip = String(device?.ip || "").trim();
+          const zoneId = Number(device?.zoneId);
+          const posIndex = Number(device?.posIndex);
+
+          if (!name) return { ok: false, status: 400, message: "Device name is required" };
+          if (!ip) return { ok: false, status: 400, message: "Device IP is required" };
+          if (!Number.isInteger(zoneId) || zoneId <= 0) return { ok: false, status: 400, message: "Zone is required" };
+          if (!Number.isInteger(posIndex) || posIndex < 0 || posIndex >= AppService.GRID_CELLS) {
+            return { ok: false, status: 400, message: "Select a valid grid cell (1..12)" };
+          }
+
+          // Enforce max 12 assigned devices per zone
+          const used = await sqlService.getUsedPositionsInZone(zoneId);
+          if ((used || []).length >= AppService.GRID_CELLS) {
+            return { ok: false, status: 409, message: "Zone already has 12 assigned devices" };
+          }
+          if ((used || []).includes(posIndex)) {
+            return { ok: false, status: 409, message: "Selected grid cell is already occupied" };
+          }
+
+          const id = await sqlService.addNewDevice({
+            name,
+            ip,
+            zoneId,
+            posIndex,
+          });
+
+          return { ok: true, id, message: `Device added: ${name}` };
         } catch (err) {
           if (err?.number === 2627 || err?.number === 2601) {
             return { ok: false, status: 409, message: "Device already exists (duplicate name/ip)" };
@@ -44,6 +74,7 @@ class AppService {
         if (patch?.name !== undefined) safePatch.name = String(patch.name || "").trim();
         if (patch?.ip !== undefined) safePatch.ip = String(patch.ip || "").trim();
         if (patch?.zoneId !== undefined) safePatch.zoneId = Number(patch.zoneId);
+        if (patch?.posIndex !== undefined) safePatch.posIndex = Number(patch.posIndex);
         if (patch?.isOnline !== undefined) safePatch.isOnline = patch.isOnline ? 1 : 0;
         if (patch?.tag !== undefined) safePatch.tag = String(patch.tag || "");
         if (patch?.label !== undefined) safePatch.label = String(patch.label || "");
@@ -65,9 +96,48 @@ class AppService {
             return { ok: false, status: 400, message: "Invalid zone id" };
           }
 
+        if (patch?.posIndex !== undefined) {
+            if (!Number.isInteger(safePatch.posIndex) || safePatch.posIndex < 0 || safePatch.posIndex >= AppService.GRID_CELLS) {
+                return { ok: false, status: 400, message: "Invalid grid position" };
+            }
+        }
+
+        // Load existing device to support zone move logic and occupancy checks
+        const existing = await sqlService.getDeviceById(id);
+        if (!existing) return { ok: false, status: 404, message: "Device not found" };
+
+        // If changing zone: auto-assign to first empty cell in target zone
+        if (patch?.zoneId !== undefined && existing.zone_id !== safePatch.zoneId) {
+            const used = await sqlService.getUsedPositionsInZone(safePatch.zoneId);
+            if ((used || []).length >= AppService.GRID_CELLS) {
+                return { ok: false, status: 409, message: "Target zone already has 12 assigned devices" };
+            }
+            let newPos = null;
+            for (let i = 0; i < AppService.GRID_CELLS; i++) {
+                if (!used.includes(i)) { newPos = i; break; }
+            }
+            if (newPos === null) {
+                return { ok: false, status: 409, message: "No empty grid cell available in target zone" };
+            }
+            safePatch.posIndex = newPos;
+        }
+
+        // If moving position within same zone (drag to empty): ensure target cell is empty
+        if (patch?.posIndex !== undefined && (patch?.zoneId === undefined || existing.zone_id === safePatch.zoneId)) {
+            const used = await sqlService.getUsedPositionsInZone(existing.zone_id);
+            const occupiedByOther = used.includes(safePatch.posIndex) && safePatch.posIndex !== existing.pos_index;
+            if (occupiedByOther) {
+                return { ok: false, status: 409, message: "Target grid cell is already occupied" };
+            }
+        }
+
         try {
             const affected = await sqlService.updateDevice(id, safePatch);
             if (!affected) return { ok: false, status: 404, message: "Device not found" };
+            const movedZone = (patch?.zoneId !== undefined && existing.zone_id !== safePatch.zoneId);
+            if (movedZone) {
+                return { ok: true, message: `Device moved. Auto-assigned to cell ${Number(safePatch.posIndex) + 1}.` };
+            }
             return { ok: true, message: "Device updated" };
         } catch (err) {
             // 2627/2601 duplicates; FK errors possible too
@@ -75,6 +145,24 @@ class AppService {
                 return { ok: false, status: 409, message: "Duplicate name or IP" };
             }
             return { ok: false, status: 500, message: "SQL error" };
+        }
+    }
+
+    async swapDevicePositions(aId, bId) {
+        const A = Number(aId);
+        const B = Number(bId);
+        if (!Number.isInteger(A) || A <= 0 || !Number.isInteger(B) || B <= 0) {
+            return { ok: false, status: 400, message: "Invalid device ids" };
+        }
+        if (A === B) return { ok: true, message: "No change" };
+
+        try {
+            const ok = await sqlService.swapDevicePositions(A, B);
+            if (!ok) return { ok: false, status: 400, message: "Swap failed" };
+            return { ok: true, message: "Positions swapped" };
+        } catch (err) {
+            // FK / unique issues will appear as SQL errors
+            return { ok: false, status: 400, message: err?.message || "Swap failed" };
         }
     }
 
@@ -368,6 +456,7 @@ class AppService {
                         id: r.device_id,
                         name: r.device_name,
                         ip: r.device_ip,
+                        posIndex: r.device_pos_index,
                     });
                 }
             }
@@ -383,7 +472,12 @@ class AppService {
             for (const c of categories) {
                 c.zones.sort((a, b) => String(a.name).localeCompare(String(b.name)));
                 for (const z of c.zones) {
-                    z.devices.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+                    z.devices.sort((a, b) => {
+                        const pa = Number.isInteger(a.posIndex) ? a.posIndex : 9999;
+                        const pb = Number.isInteger(b.posIndex) ? b.posIndex : 9999;
+                        if (pa !== pb) return pa - pb;
+                        return String(a.name).localeCompare(String(b.name));
+                    });
                 }
             }
 

@@ -7,20 +7,21 @@ class SqlService {
   /* =========================DEVICES========================= */
 
   async addNewDevice(device) {
-    // Expected: { name, ip, zoneId, isOnline?, tag?, label? }
+    // Expected: { name, ip, zoneId, posIndex, isOnline?, tag?, label? }
     const values = {
       name: device.name,
       ip: device.ip,
       zone_id: device.zoneId,
+      pos_index: device.posIndex,
       isOnline: device.isOnline ?? 0,
       tag: device.tag ?? "",
       label: device.label ?? ""
     };
 
     const sqlQuery = `
-      INSERT INTO dbo.[devices] (name, ip, zone_id, isOnline, tag, label)
+      INSERT INTO dbo.[devices] (name, ip, zone_id, pos_index, isOnline, tag, label)
       OUTPUT inserted.id
-      VALUES (@name, @ip, @zone_id, @isOnline, @tag, @label);
+      VALUES (@name, @ip, @zone_id, @pos_index, @isOnline, @tag, @label);
     `;
 
     const result = await db.execute(sqlQuery, values);
@@ -37,7 +38,7 @@ class SqlService {
 
   async getDeviceById(id) {
     const sqlQuery = `
-      SELECT id, name, ip, zone_id, isOnline, tag, label
+      SELECT id, name, ip, zone_id, pos_index, isOnline, tag, label
       FROM dbo.[devices]
       WHERE id = @id;
     `;
@@ -46,12 +47,13 @@ class SqlService {
   }
 
   async updateDevice(id, patch) {
-    // patch: { name?, ip?, zoneId?, isOnline?, tag?, label? }
+    // patch: { name?, ip?, zoneId?, posIndex?, isOnline?, tag?, label? }
     const values = {
       id,
       name: patch.name ?? null,
       ip: patch.ip ?? null,
       zone_id: patch.zoneId ?? null,
+      pos_index: (patch.posIndex !== undefined) ? patch.posIndex : null,
       isOnline: patch.isOnline ?? null,
       tag: patch.tag ?? null,
       label: patch.label ?? null,
@@ -63,6 +65,7 @@ class SqlService {
         name     = COALESCE(@name, name),
         ip       = COALESCE(@ip, ip),
         zone_id  = COALESCE(@zone_id, zone_id),
+        pos_index = COALESCE(@pos_index, pos_index),
         isOnline = COALESCE(@isOnline, isOnline),
         tag      = COALESCE(@tag, tag),
         label    = COALESCE(@label, label)
@@ -93,6 +96,7 @@ class SqlService {
         d.id, d.name, d.ip,
         d.zone_id, z.name AS zone_name,
         z.category_id, c.name AS category_name,
+        d.pos_index,
         d.isOnline, d.tag, d.label
       FROM dbo.[devices] d
       INNER JOIN dbo.[zones] z ON z.id = d.zone_id
@@ -101,6 +105,67 @@ class SqlService {
     `;
     const result = await db.execute(sqlQuery);
     return result?.recordset || [];
+  }
+
+  // Grid helpers
+  async getUsedPositionsInZone(zoneId) {
+    const sqlQuery = `
+      SELECT pos_index
+      FROM dbo.[devices]
+      WHERE zone_id = @zone_id AND pos_index IS NOT NULL;
+    `;
+    const result = await db.execute(sqlQuery, { zone_id: zoneId });
+    return (result?.recordset || []).map(r => r.pos_index);
+  }
+
+  async getDeviceZoneAndPos(id) {
+    const sqlQuery = `
+      SELECT id, zone_id, pos_index
+      FROM dbo.[devices]
+      WHERE id = @id;
+    `;
+    const result = await db.execute(sqlQuery, { id });
+    return result?.recordset?.[0] || null;
+  }
+
+  async swapDevicePositions(deviceAId, deviceBId) {
+    // Swap pos_index values between two devices. Transactional + safe.
+    const sqlQuery = `
+      BEGIN TRAN;
+
+      DECLARE @a_zone INT, @a_pos INT, @b_zone INT, @b_pos INT;
+
+      SELECT @a_zone = zone_id, @a_pos = pos_index FROM dbo.[devices] WHERE id = @a_id;
+      SELECT @b_zone = zone_id, @b_pos = pos_index FROM dbo.[devices] WHERE id = @b_id;
+
+      IF (@a_zone IS NULL OR @b_zone IS NULL)
+      BEGIN
+        ROLLBACK TRAN;
+        RAISERROR('Device not found', 16, 1);
+      END
+
+      IF (@a_zone <> @b_zone)
+      BEGIN
+        ROLLBACK TRAN;
+        RAISERROR('Devices must be in the same zone to swap', 16, 1);
+      END
+
+      -- Perform swap
+      UPDATE dbo.[devices]
+      SET pos_index = CASE
+        WHEN id = @a_id THEN @b_pos
+        WHEN id = @b_id THEN @a_pos
+        ELSE pos_index
+      END
+      WHERE id IN (@a_id, @b_id);
+
+      COMMIT TRAN;
+
+      SELECT 1 AS ok;
+    `;
+
+    const result = await db.execute(sqlQuery, { a_id: deviceAId, b_id: deviceBId });
+    return result?.recordset?.[0]?.ok === 1;
   }
 
   /* =========================CATEGORIES========================= */
@@ -313,13 +378,14 @@ class SqlService {
         z.name AS zone_name,
         d.id   AS device_id,
         d.name AS device_name,
-        d.ip   AS device_ip
+        d.ip   AS device_ip,
+        d.pos_index AS device_pos_index
       FROM dbo.[user_zones] uz
       INNER JOIN dbo.[zones] z ON z.id = uz.zone_id
       INNER JOIN dbo.[categories] c ON c.id = z.category_id
-      LEFT JOIN dbo.[devices] d ON d.zone_id = z.id
+      LEFT JOIN dbo.[devices] d ON d.zone_id = z.id AND d.pos_index IS NOT NULL
       WHERE uz.user_id = @user_id
-      ORDER BY c.name, z.name, d.name;
+      ORDER BY c.name, z.name, d.pos_index, d.name;
     `;
 
     const result = await db.execute(sqlQuery, { user_id: userId });
@@ -335,11 +401,12 @@ class SqlService {
         z.name AS zone_name,
         d.id   AS device_id,
         d.name AS device_name,
-        d.ip   AS device_ip
+        d.ip   AS device_ip,
+        d.pos_index AS device_pos_index
       FROM dbo.[zones] z
       INNER JOIN dbo.[categories] c ON c.id = z.category_id
-      LEFT JOIN dbo.[devices] d ON d.zone_id = z.id
-      ORDER BY c.name, z.name, d.name;
+      LEFT JOIN dbo.[devices] d ON d.zone_id = z.id AND d.pos_index IS NOT NULL
+      ORDER BY c.name, z.name, d.pos_index, d.name;
     `;
 
     const result = await db.execute(sqlQuery);

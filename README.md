@@ -110,6 +110,15 @@ Logs will be written to:
 
 ## Changelog
 
+### v1.1.1 - 2026-01-19
+- User UI (desktop): device grid now omits EMPTY cells per row while preserving the original row assignment (row 0 stays row 0, row 1 stays row 1).
+- User UI (desktop): fixed device selection click handling for the new grid buttons.
+
+### v1.1.0 - 2026-01-19
+- Added per-zone 6x2 device positioning (posIndex 0..11) with swap/move drag & drop in Admin.
+- Enforced max 12 assigned devices per zone and unique zone+posIndex in DB.
+- Operator UI (desktop): devices displayed in a 6x2 grid with weak-green assigned cells and EMPTY labels.
+
 ### v1.0.3 - 2026-01-05
 - Added detailed STB command logs (SEND / OK / FAIL / BUSY-DROP) including user + device details.
 - Improved fatal error experience in the Windows EXE: if the app stops due to a fatal error (startup/runtime), the console stays open so the error can be read.

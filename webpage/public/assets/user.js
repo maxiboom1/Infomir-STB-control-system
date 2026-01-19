@@ -173,9 +173,10 @@ function renderDevices() {
 
   const devices = zone.devices || [];
 
-  elGrid.className = "grid device-row";
+  // Desktop: 6x2 grid. Mobile: dropdown.
+  elGrid.className = "grid device-grid";
 
-  // Mobile: dropdown device picker. Desktop: tiles strip.
+  // Mobile: dropdown device picker. Desktop: grid.
   if (isMobile()) {
     if (elDevicePicker) elDevicePicker.hidden = false;
     if (elDeviceSelect) {
@@ -185,11 +186,46 @@ function renderDevices() {
       ].join("");
       elDeviceSelect.value = state.selectedDeviceId ? String(state.selectedDeviceId) : "";
     }
-    // no tiles in mobile
+    // no grid in mobile
     elGrid.innerHTML = "";
   } else {
     if (elDevicePicker) elDevicePicker.hidden = true;
-    renderDeviceTiles(devices);
+    // Build two logical rows (6 cells each) but *render only populated buttons per row*.
+    // This keeps row-0 devices on row-0 and row-1 devices on row-1, while omitting EMPTY cells.
+    const rows = [Array(6).fill(null), Array(6).fill(null)];
+    for (const d of devices) {
+      const i = Number(d.posIndex);
+      if (!Number.isInteger(i) || i < 0 || i >= 12) continue;
+      const r = Math.floor(i / 6);
+      const c = i % 6;
+      rows[r][c] = d;
+    }
+
+    const htmlRows = rows
+      .map((row) => {
+        const populated = row.filter(Boolean);
+        if (!populated.length) return "";
+        return (
+          `<div class="device-grid-row">` +
+          populated
+            .map((d) => {
+              const isSelected = d.id === state.selectedDeviceId;
+              const cls = ["dcell", "assigned", isSelected ? "is-selected" : ""]
+                .filter(Boolean)
+                .join(" ");
+              return `
+                <button class="${cls}" data-type="device" data-id="${d.id}">
+                  <div class="dcell-label">${escapeHtml(d.name)}</div>
+                </button>
+              `;
+            })
+            .join("") +
+          `</div>`
+        );
+      })
+      .filter(Boolean);
+
+    elGrid.innerHTML = htmlRows.join("");
   }
 
   const dev = currentDevice();
@@ -397,7 +433,8 @@ window.addEventListener("resize", () => {
 
 // Device tile click (desktop)
 elGrid?.addEventListener("click", (e) => {
-  const btn = e.target?.closest?.("button.tile");
+  // Works for both legacy tiles and the new 6x2 grid buttons.
+  const btn = e.target?.closest?.('button[data-type="device"]');
   if (!btn) return;
   const type = btn.dataset.type;
   const id = Number(btn.dataset.id);

@@ -1,6 +1,6 @@
 ﻿/* =========================================================
    MAG-Control DB — MSSQL Create Script (DEV friendly)
-   Version: v0.7.4 (devices.category derived from zones)
+   Version: v1.1.0 (device grid positions 6x2 per zone)
    Tables:
      - categories
      - zones
@@ -94,6 +94,7 @@ CREATE TABLE dbo.devices (
   name        NVARCHAR(64)       NOT NULL,
   ip          VARCHAR(45)        NOT NULL,
   zone_id     INT                NOT NULL,
+  pos_index   INT                NULL,   -- 0..11 (6x2 grid). NULL = unplaced (treated as disabled)
   isOnline    BIT                NOT NULL CONSTRAINT DF_devices_isOnline DEFAULT (0),
   tag         NVARCHAR(64)       NULL,
   label       NVARCHAR(128)      NULL,
@@ -101,9 +102,17 @@ CREATE TABLE dbo.devices (
   CONSTRAINT UQ_devices_name UNIQUE (name),
   CONSTRAINT UQ_devices_ip   UNIQUE (ip),
 
+  CONSTRAINT CK_devices_pos_index_range CHECK (pos_index IS NULL OR (pos_index >= 0 AND pos_index <= 11)),
+
   CONSTRAINT FK_devices_zone FOREIGN KEY (zone_id)
     REFERENCES dbo.zones(id)
 );
+GO
+
+-- Enforce single device per cell per zone (only when pos_index is set)
+CREATE UNIQUE INDEX UX_devices_zone_pos
+  ON dbo.devices(zone_id, pos_index)
+  WHERE pos_index IS NOT NULL;
 GO
 
 /* =======================
@@ -111,6 +120,7 @@ GO
    ======================= */
 CREATE INDEX IX_zones_category_id     ON dbo.zones(category_id);
 CREATE INDEX IX_devices_zone_id       ON dbo.devices(zone_id);
+CREATE INDEX IX_devices_zone_pos      ON dbo.devices(zone_id, pos_index);
 CREATE INDEX IX_user_zones_user_id    ON dbo.user_zones(user_id);
 CREATE INDEX IX_user_zones_zone_id    ON dbo.user_zones(zone_id);
 GO

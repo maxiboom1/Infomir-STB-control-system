@@ -35,7 +35,7 @@ try {
 const appConfig = parsed;
 
 // App Version
-appConfig.version = "1.0.3";
+appConfig.version = "1.1.1";
 
 // HTTP
 appConfig.appPort = Number(appConfig.appPort ?? 3000);

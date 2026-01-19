@@ -1,3 +1,23 @@
+Version: v1.1.1
+Date: 2026-01-19
+Done:
+- User UI (desktop): omit EMPTY device cells per row while preserving 6x2 row assignment.
+- User UI (desktop): fixed device click selection for the new grid buttons.
+Notes:
+- Mobile UI remains unchanged (device dropdown).
+----------------------------------------
+
+Version: v1.1.0
+Date: 2026-01-19
+Done:
+- Added per-zone device grid positioning (6x2) with posIndex 0..11.
+- Admin Devices: 6x2 grid placement UI with drag & drop swap/move.
+- Operator UI (desktop): 6x2 grid with weak-green assigned cells and EMPTY labels.
+- Enforcement: max 12 assigned devices per zone; zone+posIndex unique (filtered index).
+Notes:
+- On device zone change, the device is auto-assigned to the first available cell in the target zone.
+----------------------------------------
+
 Version: v1.0.3
 Date: 2026-01-05
 Done:

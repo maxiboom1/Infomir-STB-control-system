@@ -64,6 +64,16 @@ router.delete("/device/:id", requireAuth, requireAdmin, asyncHandler(async (req,
     return res.json(result);
 }));
 
+// Swap device grid positions (admin drag & drop)
+router.post("/device-swap", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+    const { aId, bId } = req.body || {};
+    const result = await appService.swapDevicePositions(aId, bId);
+    if (!result.ok) {
+        return res.status(result.status || 400).json(result);
+    }
+    return res.json(result);
+}));
+
 
 // ==========================
 // Admin: Categories CRUD

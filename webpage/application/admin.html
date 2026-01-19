@@ -84,6 +84,18 @@
                 <select id="dev-add-zone" class="select"></select>
               </div>
 
+              <div class="form-row">
+                <label class="label">Grid position</label>
+                <div class="hint">Click an empty cell to choose where the new device will appear (6×2, max 12 per zone).</div>
+              </div>
+
+              <div id="dev-add-grid" class="stb-grid" aria-label="Zone grid"></div>
+
+              <div class="form-row" style="margin-top:8px;">
+                <label class="label">Selected cell</label>
+                <div id="dev-add-pos" class="badge">None</div>
+              </div>
+
               <div class="actions">
                 <button id="btn-dev-create" class="btn">Add</button>
                 <div id="dev-add-note" class="hint"></div>
@@ -114,6 +126,15 @@
                 <label class="label" for="dev-edit-zone">Zone</label>
                 <select id="dev-edit-zone" class="select"></select>
               </div>
+
+              <div class="form-row">
+                <label class="label">Zone grid</label>
+                <div class="hint">Drag a device onto another to swap. Drag onto an empty cell to move.</div>
+              </div>
+
+              <div id="dev-edit-grid" class="stb-grid" aria-label="Zone grid"></div>
+
+              <div class="hint" id="dev-edit-note" style="margin-top:8px;"></div>
 
               <div class="actions">
                 <button id="btn-dev-save" class="btn">Save</button>

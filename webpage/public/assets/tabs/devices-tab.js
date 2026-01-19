@@ -20,9 +20,15 @@ export function initDevicesTab(shared) {
     devices: [],
     selectedDeviceId: null,
 
+    // Add form: chosen grid cell (0..11)
+    addPosIndex: null,
+    addZoneId: null,
+
     // Filter UI (in-memory only; reset on page refresh)
     filterZoneId: null, // null => all
   };
+
+  const GRID_CELLS = 12; // 6x2
 
   // Ip validator
   function isValidIPv4(ip) {
@@ -30,6 +36,15 @@ export function initDevicesTab(shared) {
     // 0-255 in each octet. Rejects leading zeros like 001.
     const re = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
     return re.test(String(ip || "").trim());
+  }
+
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   function groupZonesByCategory(zones) {
@@ -106,6 +121,65 @@ export function initDevicesTab(shared) {
     }
   }
 
+  /* =========================
+     Grid helpers (6x2)
+     ========================= */
+
+  function devicesInZone(zoneId) {
+    const zid = Number(zoneId);
+    if (!Number.isInteger(zid) || zid <= 0) return [];
+    return (state.devices || []).filter(d => Number(d.zone_id) === zid && Number.isInteger(d.pos_index));
+  }
+
+  function buildZoneCells(zoneId) {
+    const cells = Array.from({ length: GRID_CELLS }, () => null);
+    for (const d of devicesInZone(zoneId)) {
+      const i = Number(d.pos_index);
+      if (Number.isInteger(i) && i >= 0 && i < GRID_CELLS) {
+        cells[i] = d;
+      }
+    }
+    return cells;
+  }
+
+  function renderGrid(containerEl, zoneId, opts = {}) {
+    if (!containerEl) return;
+
+    const selectedDeviceId = opts.selectedDeviceId ?? null;
+    const allowClickEmpty = !!opts.allowClickEmpty;
+    const showNewOnIndex = Number.isInteger(opts.newPosIndex) ? opts.newPosIndex : null;
+
+    const cells = buildZoneCells(zoneId);
+
+    containerEl.innerHTML = cells.map((d, idx) => {
+      const isAssigned = !!d;
+      const isSelected = isAssigned && (Number(d.id) === Number(selectedDeviceId));
+      const isNew = (!isAssigned && showNewOnIndex === idx);
+
+      const cls = [
+        "stb-cell",
+        isAssigned ? "assigned" : "empty",
+        isSelected ? "is-selected" : "",
+      ].filter(Boolean).join(" ");
+
+      const deviceIdAttr = isAssigned ? `data-device-id="${d.id}"` : "";
+      const clickable = (!isAssigned && allowClickEmpty) ? "data-click-empty=\"1\"" : "";
+
+      const label = isAssigned ? escapeHtml(d.name || "") : (isNew ? "NEW" : "EMPTY");
+      const labelCls = isAssigned ? "" : (isNew ? "" : "empty");
+
+      return `
+        <div class="${cls}" data-pos-index="${idx}" ${deviceIdAttr} ${clickable}>
+          <div class="cell-index">${idx + 1}</div>
+          <div class="stb-tile" ${isAssigned ? "draggable=\"true\"" : ""} ${isAssigned ? `data-drag-id=\"${d.id}\"` : ""}>
+            <div class="cell-label ${labelCls}">${label}</div>
+          </div>
+          ${isNew ? `<div class="cell-sub new">new</div>` : ``}
+        </div>
+      `;
+    }).join("");
+  }
+
   function getVisibleDevices() {
     const search = String($("dev-search")?.value || "").trim().toLowerCase();
     const zf = state.filterZoneId;
@@ -174,11 +248,30 @@ export function initDevicesTab(shared) {
     // Populate dropdowns
     populateZoneSelect($("dev-add-zone"), state.zones, null);
 
+    // Add grid (based on current add-zone selection)
+    const addZoneId = toInt($("dev-add-zone")?.value);
+    if (addZoneId !== state.addZoneId) {
+      state.addZoneId = Number.isInteger(addZoneId) ? addZoneId : null;
+      state.addPosIndex = null; // reset selection on zone change
+    }
+    renderGrid($("dev-add-grid"), state.addZoneId, {
+      allowClickEmpty: true,
+      newPosIndex: state.addPosIndex,
+    });
+    const addPosBadge = $("dev-add-pos");
+    if (addPosBadge) addPosBadge.textContent = Number.isInteger(state.addPosIndex) ? String(state.addPosIndex + 1) : "None";
+
     const selected = state.selectedDeviceId
       ? state.devices.find(d => d.id === state.selectedDeviceId)
       : null;
 
     populateZoneSelect($("dev-edit-zone"), state.zones, selected?.zone_id || null);
+
+    // Edit grid (by the selected edit-zone)
+    const editZoneId = toInt($("dev-edit-zone")?.value) || selected?.zone_id || null;
+    renderGrid($("dev-edit-grid"), editZoneId, {
+      selectedDeviceId: selected?.id || null,
+    });
 
     // Filter controls
     renderZoneFilter();
@@ -270,6 +363,90 @@ export function initDevicesTab(shared) {
     const listEl = $("dev-list");
     if (!listEl) return; // not on admin page
 
+    const addGridEl = $("dev-add-grid");
+    const editGridEl = $("dev-edit-grid");
+
+    $("dev-add-zone")?.addEventListener("change", () => {
+      state.addPosIndex = null;
+      render();
+    });
+
+    addGridEl?.addEventListener("click", (e) => {
+      const cell = e.target?.closest?.(".stb-cell[data-click-empty=\"1\"]");
+      if (!cell) return;
+      const idx = toInt(cell.dataset.posIndex);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= GRID_CELLS) return;
+      state.addPosIndex = idx;
+      render();
+    });
+
+    // Drag & drop swap/move in edit grid
+    let dragDeviceId = null;
+    editGridEl?.addEventListener("dragstart", (e) => {
+      const tile = e.target?.closest?.(".stb-tile[draggable=\"true\"]");
+      if (!tile) return;
+      const id = toInt(tile.dataset.dragId);
+      if (!Number.isInteger(id) || id <= 0) return;
+      dragDeviceId = id;
+      try { e.dataTransfer.setData("text/plain", String(id)); } catch {}
+    });
+
+    editGridEl?.addEventListener("dragend", () => { dragDeviceId = null; });
+
+    function setDropHover(cell, on) {
+      if (!cell) return;
+      cell.classList.toggle("drop-hover", !!on);
+    }
+
+    editGridEl?.addEventListener("dragover", (e) => {
+      const cell = e.target?.closest?.(".stb-cell[data-pos-index]");
+      if (!cell) return;
+      e.preventDefault(); // allow drop
+    });
+
+    editGridEl?.addEventListener("dragenter", (e) => {
+      const cell = e.target?.closest?.(".stb-cell[data-pos-index]");
+      if (!cell) return;
+      setDropHover(cell, true);
+    });
+
+    editGridEl?.addEventListener("dragleave", (e) => {
+      const cell = e.target?.closest?.(".stb-cell[data-pos-index]");
+      if (!cell) return;
+      setDropHover(cell, false);
+    });
+
+    editGridEl?.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      const cell = e.target?.closest?.(".stb-cell[data-pos-index]");
+      if (!cell) return;
+      setDropHover(cell, false);
+
+      const srcId = dragDeviceId || toInt(e.dataTransfer?.getData?.("text/plain"));
+      if (!Number.isInteger(srcId) || srcId <= 0) return;
+
+      const dstDeviceId = toInt(cell.dataset.deviceId);
+      const dstPosIndex = toInt(cell.dataset.posIndex);
+      if (!Number.isInteger(dstPosIndex) || dstPosIndex < 0 || dstPosIndex >= GRID_CELLS) return;
+
+      // Swap if dropping onto another device
+      if (Number.isInteger(dstDeviceId) && dstDeviceId > 0 && dstDeviceId !== srcId) {
+        setStatus("Swapping positions...");
+        const r = await api("/api/device-swap", jsonOptions("POST", { aId: srcId, bId: dstDeviceId }));
+        if (!r.ok) return setStatus(r.data?.message || "Swap failed");
+        setStatus("Positions swapped");
+        await reload({ keepSelection: true });
+        return;
+      }
+
+      // Move to empty cell
+      setStatus("Moving device...");
+      const r = await api(`/api/device/${srcId}`, jsonOptions("PUT", { posIndex: dstPosIndex }));
+      if (!r.ok) return setStatus(r.data?.message || "Move failed");
+      setStatus("Device moved");
+      await reload({ keepSelection: true });
+    });
+
     $("btn-dev-reload")?.addEventListener("click", () => reload());
     $("dev-search")?.addEventListener("input", () => render());
 
@@ -302,20 +479,23 @@ export function initDevicesTab(shared) {
       const name = String($("dev-add-name")?.value || "").trim();
       const ip = String($("dev-add-ip")?.value || "").trim();
       const zoneId = toInt($("dev-add-zone")?.value);
+      const posIndex = state.addPosIndex;
 
       if (!state.zones.length) return setHint(note, "Create a zone first", true);
       if (!name) return setHint(note, "Name is required", true);
       if (!ip) return setHint(note, "IP is required", true);
       if (!isValidIPv4(ip)) return setHint(note, "Invalid IP (IPv4 only)", true);
       if (!Number.isInteger(zoneId) || zoneId <= 0) return setHint(note, "Zone is required", true);
+      if (!Number.isInteger(posIndex) || posIndex < 0 || posIndex >= GRID_CELLS) return setHint(note, "Click an empty grid cell to pick a position", true);
 
       setHint(note, "Adding...");
-      const r = await api("/api/add-device", jsonOptions("POST", { name, ip, zoneId }));
+      const r = await api("/api/add-device", jsonOptions("POST", { name, ip, zoneId, posIndex }));
       if (!r.ok) return setHint(note, r.data?.message || "Add failed", true);
 
       setHint(note, "Device added");
       if ($("dev-add-name")) $("dev-add-name").value = "";
       if ($("dev-add-ip")) $("dev-add-ip").value = "";
+      state.addPosIndex = null;
       await reload({ keepSelection: false, selectDeviceId: r.data?.id || null });
     });
 
