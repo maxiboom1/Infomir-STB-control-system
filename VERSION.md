@@ -1,3 +1,15 @@
+Version: v1.3.2
+Date: 2026-01-25
+Done:
+- Security: force admin to change the default bootstrap password.
+  - If admin password is stored as plaintext "admin", the UI blocks admin operations until it is changed.
+  - New password rules: min 8 characters; cannot be "admin"; cannot contain \\.
+  - New page: /force-password.html to set the new admin password.
+- Logging: extended admin audit logs (DB export/import + admin CRUD actions + channels map changes + user-zone assignments).
+Notes:
+- After changing the admin password, the app clears the auth cookie and requires re-login.
+----------------------------------------
+
 Version: v1.3.1
 Date: 2026-01-25
 Done:

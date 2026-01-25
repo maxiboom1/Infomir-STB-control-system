@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import appConfig from "../3-utilities/app-config.js";
+import authService from "../4-services/auth-service.js";
 
 const COOKIE_NAME = appConfig.jwtCookieName || "mag_auth";
 const JWT_SECRET = appConfig.jwtSecret;
@@ -37,6 +38,24 @@ export function requireAdmin(req, res, next) {
         return res.status(403).json({ ok: false, message: "Forbidden" });
     }
     next();
+}
+
+// Admin is authenticated but locked until default password is changed.
+export async function requireAdminUnlocked(req, res, next) {
+    if (req.user?.role !== "admin") {
+        return res.status(403).json({ ok: false, message: "Forbidden" });
+    }
+
+    try {
+        const uid = req.user?.uid ?? req.user?.id;
+        const locked = await authService.isDefaultAdminPasswordByUserId(uid);
+        if (locked) {
+            return res.status(423).json({ ok: false, message: "Admin password must be changed", forcePasswordChange: true });
+        }
+        return next();
+    } catch {
+        return res.status(500).json({ ok: false, message: "Auth check failed" });
+    }
 }
 
 

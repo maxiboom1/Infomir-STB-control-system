@@ -1,8 +1,14 @@
 # STB Zones Control Dashboard
 
-**Current version:** v1.3.1
+**Current version:** v1.3.2
 
-### Latest changes (v1.3.1)
+### Latest changes (v1.3.2)
+
+- Security: force admin to change default bootstrap password (plaintext "admin").
+  - Locked admin APIs return 423 with `forcePasswordChange=true` until updated.
+  - New password rules: min 8 chars; cannot be "admin"; cannot contain \\.
+  - New UI: `/force-password.html`.
+- Logging: added explicit admin audit logs for DB export/import and all admin CRUD operations.
 - Admin: added "Backup / Restore" tab.
 - Export: download full DB snapshot to JSON (including users, zones, devices, channels map, assignments).
 - Import: upload a snapshot JSON and overwrite the DB (optionally keep current admin credentials; import forces re-login).
@@ -115,6 +121,13 @@ Logs will be written to:
 ---
 
 ## Change log
+
+### v1.3.2 - 2026-01-25
+- Security: force admin to change default bootstrap password (plaintext "admin").
+  - Locked admin APIs return 423 with `forcePasswordChange=true` until updated.
+  - Password rules: min 8 chars; cannot be "admin"; cannot contain \\.
+  - Added `/force-password.html`.
+- Logging: added explicit admin audit logs for DB export/import and all admin CRUD operations.
 
 ### v1.3.1 - 2026-01-25
 - Admin: added "Backup / Restore" tab.

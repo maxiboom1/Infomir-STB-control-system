@@ -37,7 +37,11 @@ form.addEventListener("submit", async (e) => {
     }
     console.log(res)
     setStatus("Success. Redirecting...");
-    window.location.href = "/"; // server will serve admin/user after auth (next step)
+    if (data?.forcePasswordChange) {
+      window.location.href = "/force-password.html";
+    } else {
+      window.location.href = "/"; // server will serve admin/user after auth
+    }
   } catch (err) {
     setStatus("Network error.");
     btn.disabled = false;

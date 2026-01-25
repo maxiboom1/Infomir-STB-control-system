@@ -1,6 +1,6 @@
 {
   "name": "infomir_stb_control_system",
-  "version": "1.2.1",
+  "version": "1.3.2",
   "description": "",
   "type": "module",
   "main": "app.js",

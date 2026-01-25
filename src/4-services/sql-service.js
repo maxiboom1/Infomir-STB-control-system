@@ -286,7 +286,7 @@ class SqlService {
   }
   async getUserById(id) {
     const sqlQuery = `
-      SELECT id, username, role
+      SELECT id, username, password, role
       FROM dbo.[users]
       WHERE id = @id;
     `;

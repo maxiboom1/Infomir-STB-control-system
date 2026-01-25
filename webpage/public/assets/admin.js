@@ -50,6 +50,14 @@ async function api(url, options = {}) {
   const res = await fetch(url, { credentials: "include", ...options });
   const data = await res.json().catch(() => ({}));
 
+  // If admin is locked (default password), force password change flow.
+  if (res.status === 423 || data?.forcePasswordChange) {
+    if (!window.location.pathname.endsWith("/force-password.html")) {
+      window.location.href = "/force-password.html";
+    }
+    return { ok: false, status: res.status, data };
+  }
+
   // If auth expired, return user to login page.
   if (res.status === 401 || res.status === 403) {
     if (!window.location.pathname.endsWith("/login.html")) {
@@ -127,7 +135,20 @@ tabButtons.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset
 
 document.addEventListener("DOMContentLoaded", () => {
   initAccordionBehavior();
-  setTab("catzones");
+  (async () => {
+    // Gate admin UI if default password is still in place
+    const me = await api("/api/auth/me");
+    if (!me.ok) return; // api() already redirected
+    if (me.data?.user?.role !== "admin") {
+      window.location.href = "/";
+      return;
+    }
+    if (me.data?.forcePasswordChange) {
+      window.location.href = "/force-password.html";
+      return;
+    }
+    setTab("catzones");
+  })();
 });
 
 

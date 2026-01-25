@@ -1,7 +1,7 @@
 import express from "express";
 import appService from "../4-services/app-service.js";
 import authRoutes from "./auth.js"; 
-import { requireAuth, requireAdmin } from "../2-middleware/auth-middleware.js";
+import { requireAuth, requireAdminUnlocked } from "../2-middleware/auth-middleware.js";
 import asyncHandler from "../3-utilities/async-handler.js";
 
 
@@ -30,8 +30,8 @@ router.get("/channels-map", requireAuth, asyncHandler(async (req, res) => {
     return res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
 }));
 
-router.put("/channels-map", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
-    const result = await appService.updateChannelsMap(req.body);
+router.put("/channels-map", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
+    const result = await appService.updateChannelsMap(req.body, req.user);
     return res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
 }));
 
@@ -39,8 +39,8 @@ router.put("/channels-map", requireAuth, requireAdmin, asyncHandler(async (req, 
 // Admin: DB Export / Import
 // ==========================
 
-router.get("/db-export", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
-    const result = await appService.exportDbSnapshot();
+router.get("/db-export", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
+    const result = await appService.exportDbSnapshot(req.user);
     if (!result.ok) {
         return res.status(result.status || 500).json(result);
     }
@@ -53,9 +53,9 @@ router.get("/db-export", requireAuth, requireAdmin, asyncHandler(async (req, res
     return res.status(200).send(JSON.stringify(result.snapshot, null, 2));
 }));
 
-router.post("/db-import", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.post("/db-import", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const { snapshot, keepAdmin } = req.body || {};
-    const result = await appService.importDbSnapshot(snapshot, { keepAdmin: !!keepAdmin });
+    const result = await appService.importDbSnapshot(snapshot, { keepAdmin: !!keepAdmin, actor: req.user });
     return res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
 }));
 
@@ -65,9 +65,9 @@ router.get("/get-devices", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 
-router.post("/add-device",requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.post("/add-device",requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const device = req.body; // { name, ip, categoryId, zoneId }
-    const result = await appService.addNewStb(device);
+    const result = await appService.addNewStb(device, req.user);
     if (!result.ok) { //{ ok:false, status:409, message:"..." }
       return res.status(result.status || 400).json(result);
     }
@@ -79,7 +79,7 @@ router.post("/add-device",requireAuth, requireAdmin, asyncHandler(async (req, re
 // Admin: Devices CRUD extras
 // ==========================
 
-router.get("/devices-detailed", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.get("/devices-detailed", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const result = await appService.getAllDevicesDetailed();
     if (!result.ok) {
         return res.status(result.status || 500).json(result);
@@ -87,19 +87,19 @@ router.get("/devices-detailed", requireAuth, requireAdmin, asyncHandler(async (r
     return res.json(result);
 }));
 
-router.put("/device/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.put("/device/:id", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const deviceId = req.params.id;
     const patch = req.body; // { name?, ip?, categoryId?, zoneId?, isOnline?, tag?, label? }
-    const result = await appService.updateStb(deviceId, patch);
+    const result = await appService.updateStb(deviceId, patch, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
     return res.json(result);
 }));
 
-router.delete("/device/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.delete("/device/:id", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const deviceId = req.params.id;
-    const result = await appService.deleteStb(deviceId);
+    const result = await appService.deleteStb(deviceId, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
@@ -107,9 +107,9 @@ router.delete("/device/:id", requireAuth, requireAdmin, asyncHandler(async (req,
 }));
 
 // Swap device grid positions (admin drag & drop)
-router.post("/device-swap", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.post("/device-swap", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const { aId, bId } = req.body || {};
-    const result = await appService.swapDevicePositions(aId, bId);
+    const result = await appService.swapDevicePositions(aId, bId, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
@@ -121,7 +121,7 @@ router.post("/device-swap", requireAuth, requireAdmin, asyncHandler(async (req, 
 // Admin: Categories CRUD
 // ==========================
 
-router.get("/categories", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.get("/categories", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const result = await appService.getCategories();
     if (!result.ok) {
         return res.status(result.status || 500).json(result);
@@ -129,28 +129,28 @@ router.get("/categories", requireAuth, requireAdmin, asyncHandler(async (req, re
     return res.json(result);
 }));
 
-router.post("/categories", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.post("/categories", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const { name } = req.body || {};
-    const result = await appService.createCategory(name);
+    const result = await appService.createCategory(name, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
     return res.json(result);
 }));
 
-router.put("/categories/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.put("/categories/:id", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const id = req.params.id;
     const { name } = req.body || {};
-    const result = await appService.updateCategory(id, name);
+    const result = await appService.updateCategory(id, name, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
     return res.json(result);
 }));
 
-router.delete("/categories/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.delete("/categories/:id", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const id = req.params.id;
-    const result = await appService.deleteCategory(id);
+    const result = await appService.deleteCategory(id, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
@@ -162,7 +162,7 @@ router.delete("/categories/:id", requireAuth, requireAdmin, asyncHandler(async (
 // Admin: Zones CRUD
 // ==========================
 
-router.get("/zones", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.get("/zones", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const result = await appService.getZones();
 
     if (!result.ok) {
@@ -171,9 +171,9 @@ router.get("/zones", requireAuth, requireAdmin, asyncHandler(async (req, res) =>
     return res.json(result);
 }));
 
-router.post("/zones", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.post("/zones", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const { name, categoryId } = req.body || {};
-    const result = await appService.createZone(name, categoryId);
+    const result = await appService.createZone(name, categoryId, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
@@ -181,19 +181,19 @@ router.post("/zones", requireAuth, requireAdmin, asyncHandler(async (req, res) =
 }));
 
 // Update zone (rename and/or assign to category)
-router.put("/zones/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.put("/zones/:id", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const id = req.params.id;
     const patch = req.body; // { name?, categoryId? }
-    const result = await appService.updateZone(id, patch);
+    const result = await appService.updateZone(id, patch, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
     return res.json(result);
 }));
 
-router.delete("/zones/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.delete("/zones/:id", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const id = req.params.id;
-    const result = await appService.deleteZone(id);
+    const result = await appService.deleteZone(id, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
@@ -205,7 +205,7 @@ router.delete("/zones/:id", requireAuth, requireAdmin, asyncHandler(async (req, 
 // Admin: Users CRUD
 // ==========================
 
-router.get("/users", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.get("/users", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const result = await appService.getUsers();
     if (!result.ok) {
         return res.status(result.status || 500).json(result);
@@ -213,28 +213,28 @@ router.get("/users", requireAuth, requireAdmin, asyncHandler(async (req, res) =>
     return res.json(result);
 }));
 
-router.post("/users", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.post("/users", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const { username, password, role, label, tag } = req.body || {};
-    const result = await appService.createUser({ username, password, role, label, tag });
+    const result = await appService.createUser({ username, password, role, label, tag }, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
     return res.json(result);
 }));
 
-router.put("/users/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.put("/users/:id", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const id = req.params.id;
     const patch = req.body; // { username?, password?, role?, label?, tag? }
-    const result = await appService.updateUser(id, patch);
+    const result = await appService.updateUser(id, patch, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
     return res.json(result);
 }));
 
-router.delete("/users/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.delete("/users/:id", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const id = req.params.id;
-    const result = await appService.deleteUser(id);
+    const result = await appService.deleteUser(id, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }
@@ -246,7 +246,7 @@ router.delete("/users/:id", requireAuth, requireAdmin, asyncHandler(async (req, 
 // Admin: User ⇄ Zones Assignment
 // ==========================
 
-router.get("/users/:id/zones", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.get("/users/:id/zones", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const id = req.params.id;
     const result = await appService.getUserZones(id);
     if (!result.ok) {
@@ -255,10 +255,10 @@ router.get("/users/:id/zones", requireAuth, requireAdmin, asyncHandler(async (re
     return res.json(result);
 }));
 
-router.put("/users/:id/zones", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+router.put("/users/:id/zones", requireAuth, requireAdminUnlocked, asyncHandler(async (req, res) => {
     const id = req.params.id;
     const { zoneIds } = req.body || {}; // { zoneIds: [1,2,3] }
-    const result = await appService.setUserZones(id, zoneIds);
+    const result = await appService.setUserZones(id, zoneIds, req.user);
     if (!result.ok) {
         return res.status(result.status || 400).json(result);
     }

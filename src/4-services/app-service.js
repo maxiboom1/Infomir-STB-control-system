@@ -5,6 +5,14 @@ import logger from "../3-utilities/logger.js";
 import appConfig from "../3-utilities/app-config.js";
 import bcrypt from "bcryptjs";
 
+function actorTag(actor) {
+    if (!actor) return "unknown";
+    const uid = actor.uid ?? actor.id ?? "";
+    const u = actor.username ?? "";
+    const role = actor.role ?? "";
+    return `${u}#${uid}(${role})`;
+}
+
 class AppService {
 
     // 6*2 grid = 12 cells
@@ -12,7 +20,7 @@ class AppService {
 
     /* =========================Devices========================= */
 
-    async addNewStb(device) { // Expected device { name, ip, zoneId, posIndex }
+    async addNewStb(device, actor) { // Expected device { name, ip, zoneId, posIndex }
         try {
           const name = String(device?.name || "").trim();
           const ip = String(device?.ip || "").trim();
@@ -42,6 +50,8 @@ class AppService {
             posIndex,
           });
 
+          logger(`[ADMIN] user=${actorTag(actor)} action=CREATE_DEVICE id=${id} name="${name}" ip=${ip} zoneId=${zoneId} posIndex=${posIndex}`, "green");
+
           return { ok: true, id, message: `Device added: ${name}` };
         } catch (err) {
           if (err?.number === 2627 || err?.number === 2601) {
@@ -63,7 +73,7 @@ class AppService {
     }
 
     // Update device (admin)
-    async updateStb(deviceId, patch) {
+    async updateStb(deviceId, patch, actor) {
         const id = Number(deviceId);
         if (!Number.isInteger(id) || id <= 0) {
             return { ok: false, status: 400, message: "Invalid device id" };
@@ -137,8 +147,10 @@ class AppService {
             if (!affected) return { ok: false, status: 404, message: "Device not found" };
             const movedZone = (patch?.zoneId !== undefined && existing.zone_id !== safePatch.zoneId);
             if (movedZone) {
+                logger(`[ADMIN] user=${actorTag(actor)} action=MOVE_DEVICE id=${id} name="${existing.name}" fromZoneId=${existing.zone_id} toZoneId=${safePatch.zoneId} newPosIndex=${safePatch.posIndex}`, "cyan");
                 return { ok: true, message: `Device moved. Auto-assigned to cell ${Number(safePatch.posIndex) + 1}.` };
             }
+            logger(`[ADMIN] user=${actorTag(actor)} action=UPDATE_DEVICE id=${id} name="${existing.name}" ip=${existing.ip} zoneId=${existing.zone_id}`, "cyan");
             return { ok: true, message: "Device updated" };
         } catch (err) {
             // 2627/2601 duplicates; FK errors possible too
@@ -149,7 +161,7 @@ class AppService {
         }
     }
 
-    async swapDevicePositions(aId, bId) {
+    async swapDevicePositions(aId, bId, actor) {
         const A = Number(aId);
         const B = Number(bId);
         if (!Number.isInteger(A) || A <= 0 || !Number.isInteger(B) || B <= 0) {
@@ -160,6 +172,7 @@ class AppService {
         try {
             const ok = await sqlService.swapDevicePositions(A, B);
             if (!ok) return { ok: false, status: 400, message: "Swap failed" };
+            logger(`[ADMIN] user=${actorTag(actor)} action=SWAP_DEVICE_POSITIONS aId=${A} bId=${B}`, "cyan");
             return { ok: true, message: "Positions swapped" };
         } catch (err) {
             // FK / unique issues will appear as SQL errors
@@ -168,15 +181,17 @@ class AppService {
     }
 
     // Delete device (admin)
-    async deleteStb(deviceId) {
+    async deleteStb(deviceId, actor) {
         const id = Number(deviceId);
         if (!Number.isInteger(id) || id <= 0) {
             return { ok: false, status: 400, message: "Invalid device id" };
         }
 
         try {
+            const existing = await sqlService.getDeviceById(id);
             const affected = await sqlService.deleteDevice(id);
             if (!affected) return { ok: false, status: 404, message: "Device not found" };
+            logger(`[ADMIN] user=${actorTag(actor)} action=DELETE_DEVICE id=${id} name="${existing?.name ?? ""}" ip=${existing?.ip ?? ""}"`, "yellow");
             return { ok: true, message: "Device deleted" };
         } catch {
             return { ok: false, status: 500, message: "Delete failed" };
@@ -190,12 +205,13 @@ class AppService {
         return { ok: true, categories };
     }
 
-    async createCategory(name) {
+    async createCategory(name, actor) {
         const n = String(name || "").trim();
         if (!n) return { ok: false, status: 400, message: "Category name is required" };
 
         try {
             const id = await sqlService.createCategory(n);
+            logger(`[ADMIN] user=${actorTag(actor)} action=CREATE_CATEGORY id=${id} name="${n}"`, "green");
             return { ok: true, id, message: "Category created" };
         } catch (err) {
             // likely unique constraint
@@ -203,7 +219,7 @@ class AppService {
         }
     }
 
-    async updateCategory(id, name) {
+    async updateCategory(id, name, actor) {
         const cid = Number(id);
         const n = String(name || "").trim();
         if (!Number.isInteger(cid) || cid <= 0) return { ok: false, status: 400, message: "Invalid category id" };
@@ -212,19 +228,21 @@ class AppService {
         try {
             const affected = await sqlService.updateCategory(cid, n);
             if (!affected) return { ok: false, status: 404, message: "Category not found" };
+            logger(`[ADMIN] user=${actorTag(actor)} action=UPDATE_CATEGORY id=${cid} name="${n}"`, "cyan");
             return { ok: true, message: "Category updated" };
         } catch {
             return { ok: false, status: 409, message: "Category name already exists" };
         }
     }
 
-    async deleteCategory(id) {
+    async deleteCategory(id, actor) {
         const cid = Number(id);
         if (!Number.isInteger(cid) || cid <= 0) return { ok: false, status: 400, message: "Invalid category id" };
 
         try {
             const affected = await sqlService.deleteCategory(cid);
             if (!affected) return { ok: false, status: 404, message: "Category not found" };
+            logger(`[ADMIN] user=${actorTag(actor)} action=DELETE_CATEGORY id=${cid}`, "yellow");
             return { ok: true, message: "Category deleted" };
         } catch {
             // FK prevents delete when zones/devices reference it
@@ -239,7 +257,7 @@ class AppService {
         return { ok: true, zones };
     }
 
-    async createZone(name, categoryId) {
+    async createZone(name, categoryId, actor) {
         const n = String(name || "").trim();
         const cid = Number(categoryId);
 
@@ -248,13 +266,14 @@ class AppService {
 
         try {
             const id = await sqlService.createZone(n, cid);
+            logger(`[ADMIN] user=${actorTag(actor)} action=CREATE_ZONE id=${id} name="${n}" categoryId=${cid}`, "green");
             return { ok: true, id, message: "Zone created" };
         } catch {
             return { ok: false, status: 409, message: "Zone already exists or category invalid" };
         }
     }
 
-    async updateZone(id, patch) {
+    async updateZone(id, patch, actor) {
         const zid = Number(id);
         if (!Number.isInteger(zid) || zid <= 0) return { ok: false, status: 400, message: "Invalid zone id" };
 
@@ -268,19 +287,24 @@ class AppService {
         try {
             const affected = await sqlService.updateZone(zid, { name, categoryId });
             if (!affected) return { ok: false, status: 404, message: "Zone not found" };
+            logger(`[ADMIN] user=${actorTag(actor)} action=UPDATE_ZONE id=${zid}` +
+                (name !== undefined ? ` name="${name}"` : "") +
+                (categoryId !== undefined ? ` categoryId=${categoryId}` : ""),
+                "cyan");
             return { ok: true, message: "Zone updated" };
         } catch {
             return { ok: false, status: 409, message: "Zone update failed (duplicate name or invalid category)" };
         }
     }
 
-    async deleteZone(id) {
+    async deleteZone(id, actor) {
         const zid = Number(id);
         if (!Number.isInteger(zid) || zid <= 0) return { ok: false, status: 400, message: "Invalid zone id" };
 
         try {
             const affected = await sqlService.deleteZone(zid);
             if (!affected) return { ok: false, status: 404, message: "Zone not found" };
+            logger(`[ADMIN] user=${actorTag(actor)} action=DELETE_ZONE id=${zid}`, "yellow");
             return { ok: true, message: "Zone deleted" };
         } catch {
             // FK prevents delete when devices/user_zones reference it
@@ -295,7 +319,7 @@ class AppService {
         return { ok: true, users };
     }
 
-    async createUser({ username, password, role, label, tag }) {
+    async createUser({ username, password, role, label, tag }, actor) {
         const u = String(username || "").trim();
         const p = String(password || "");
         // Role/label/tag are internal. System has exactly one constant admin user.
@@ -315,13 +339,14 @@ class AppService {
 
         try {
             const id = await sqlService.createUser({ username: u, password: hash, role: r, label: lbl, tag: tg });
+            logger(`[ADMIN] user=${actorTag(actor)} action=CREATE_USER id=${id} username="${u}" role=${r}`, "green");
             return { ok: true, id, message: "User created" };
         } catch {
             return { ok: false, status: 409, message: "Username already exists" };
         }
     }
 
-    async updateUser(id, patch) {
+    async updateUser(id, patch, actor) {
         const uid = Number(id);
         if (!Number.isInteger(uid) || uid <= 0) return { ok: false, status: 400, message: "Invalid user id" };
 
@@ -352,13 +377,17 @@ class AppService {
         try {
             const affected = await sqlService.updateUser(uid, patchForSql);
             if (!affected) return { ok: false, status: 404, message: "User not found" };
+            logger(`[ADMIN] user=${actorTag(actor)} action=UPDATE_USER id=${uid}` +
+                (username !== undefined ? ` username="${username}"` : "") +
+                (password !== undefined ? ` passwordChanged=1` : ""),
+                "cyan");
             return { ok: true, message: "User updated" };
         } catch {
             return { ok: false, status: 409, message: "Update failed (username already exists)" };
         }
     }
 
-    async deleteUser(id) {
+    async deleteUser(id, actor) {
         const uid = Number(id);
         if (!Number.isInteger(uid) || uid <= 0) return { ok: false, status: 400, message: "Invalid user id" };
 
@@ -369,6 +398,7 @@ class AppService {
         try {
             const affected = await sqlService.deleteUser(uid);
             if (!affected) return { ok: false, status: 404, message: "User not found" };
+            logger(`[ADMIN] user=${actorTag(actor)} action=DELETE_USER id=${uid} username="${existing.username}"`, "yellow");
             return { ok: true, message: "User deleted" };
         } catch (err) {
             // MSSQL FK violation (e.g. user still referenced by user_zones)
@@ -396,7 +426,7 @@ class AppService {
         return { ok: true, zoneIds };
     }
 
-    async setUserZones(userId, zoneIds) {
+    async setUserZones(userId, zoneIds, actor) {
         const uid = Number(userId);
         if (!Number.isInteger(uid) || uid <= 0) return { ok: false, status: 400, message: "Invalid user id" };
 
@@ -410,6 +440,7 @@ class AppService {
         // Note: we rely on FK constraints to reject invalid zone IDs
         try {
             const count = await sqlService.replaceUserZones(uid, clean);
+            logger(`[ADMIN] user=${actorTag(actor)} action=SET_USER_ZONES userId=${uid} zones=[${clean.join(",")}]`, "cyan");
             return { ok: true, count, message: "User zones updated" };
         } catch (err) {
             logger("[SERVICE] setUserZones error", err);
@@ -500,7 +531,7 @@ class AppService {
         return { ok: true, channels };
     }
 
-    async updateChannelsMap(payload) {
+    async updateChannelsMap(payload, actor) {
         const list = Array.isArray(payload?.channels) ? payload.channels : [];
         // Accept partial updates; ignore invalid rows.
         let changed = 0;
@@ -511,13 +542,15 @@ class AppService {
             const affected = await sqlService.updateChannelName(n, name);
             if (affected) changed += 1;
         }
+        logger(`[ADMIN] user=${actorTag(actor)} action=UPDATE_CHANNELS_MAP changed=${changed}`, changed ? "green" : "dimmed");
         return { ok: true, changed, message: "Channels map updated" };
     }
 
     /* =========================DB Export / Import (Admin)========================= */
 
-    async exportDbSnapshot() {
+    async exportDbSnapshot(actor) {
         try {
+            logger(`[ADMIN] user=${actorTag(actor)} action=DB_EXPORT start`, "cyan");
             const data = await sqlService.getDbSnapshot();
             const snapshot = {
                 exportVersion: String(appConfig.version || ""),
@@ -525,6 +558,7 @@ class AppService {
                 exportedAt: new Date().toISOString(),
                 ...data,
             };
+            logger(`[ADMIN] user=${actorTag(actor)} action=DB_EXPORT ok`, "green");
             return { ok: true, snapshot };
         } catch (err) {
             logger(`[SERVICE] exportDbSnapshot error: ${err}`, "red");
@@ -532,12 +566,14 @@ class AppService {
         }
     }
 
-    async importDbSnapshot(snapshot, { keepAdmin } = {}) {
+    async importDbSnapshot(snapshot, { keepAdmin, actor } = {}) {
         try {
             if (!snapshot || typeof snapshot !== "object") {
                 return { ok: false, status: 400, message: "Invalid snapshot payload" };
             }
+            logger(`[ADMIN] user=${actorTag(actor)} action=DB_IMPORT start keepAdmin=${!!keepAdmin}`, "yellow");
             await sqlService.importDbSnapshot(snapshot, { keepAdmin: !!keepAdmin });
+            logger(`[ADMIN] user=${actorTag(actor)} action=DB_IMPORT ok keepAdmin=${!!keepAdmin}`, "green");
             return { ok: true, message: "Import completed. Please re-login." };
         } catch (err) {
             logger(`[SERVICE] importDbSnapshot error: ${err}`, "red");
