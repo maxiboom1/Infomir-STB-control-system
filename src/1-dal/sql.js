@@ -45,6 +45,45 @@ async function execute(query, values) {
   }
 }
 
+/**
+ * Run multiple queries inside a single SQL transaction.
+ * Provides a minimal tx.execute(query, values) helper.
+ */
+async function withTransaction(handler) {
+  const pool = await poolPromise;
+  const transaction = new sql.Transaction(pool);
+
+  const txExecute = async (query, values) => {
+    const request = new sql.Request(transaction);
+    if (values && typeof values === "object") {
+      for (const key in values) {
+        if (Object.prototype.hasOwnProperty.call(values, key)) {
+          request.input(key, values[key]);
+        }
+      }
+    }
+    return request.query(query);
+  };
+
+  try {
+    await transaction.begin();
+    const result = await handler({ execute: txExecute, transaction });
+    await transaction.commit();
+    return result;
+  } catch (err) {
+    try {
+      if (transaction._aborted !== true) {
+        await transaction.rollback();
+      }
+    } catch {
+      // ignore rollback errors
+    }
+    logger(`[SQL TX] Transaction failed: ${err}`, "red");
+    throw err;
+  }
+}
+
 export default {
-  execute
+  execute,
+  withTransaction
 };

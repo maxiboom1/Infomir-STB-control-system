@@ -10,7 +10,8 @@ import { pauseThenExitIfNeeded } from "./src/3-utilities/pause-console.js";
 
 const app = express();
 
-app.use(express.json());
+// Allow snapshot imports (JSON) without hitting the default 100kb limit.
+app.use(express.json({ limit: "2mb" }));
 app.use("/api", routes);
 
 // Static (only login + assets)

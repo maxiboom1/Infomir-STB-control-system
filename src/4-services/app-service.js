@@ -514,6 +514,37 @@ class AppService {
         return { ok: true, changed, message: "Channels map updated" };
     }
 
+    /* =========================DB Export / Import (Admin)========================= */
+
+    async exportDbSnapshot() {
+        try {
+            const data = await sqlService.getDbSnapshot();
+            const snapshot = {
+                exportVersion: String(appConfig.version || ""),
+                schemaVersion: 1,
+                exportedAt: new Date().toISOString(),
+                ...data,
+            };
+            return { ok: true, snapshot };
+        } catch (err) {
+            logger(`[SERVICE] exportDbSnapshot error: ${err}`, "red");
+            return { ok: false, status: 500, message: "Failed to export DB snapshot" };
+        }
+    }
+
+    async importDbSnapshot(snapshot, { keepAdmin } = {}) {
+        try {
+            if (!snapshot || typeof snapshot !== "object") {
+                return { ok: false, status: 400, message: "Invalid snapshot payload" };
+            }
+            await sqlService.importDbSnapshot(snapshot, { keepAdmin: !!keepAdmin });
+            return { ok: true, message: "Import completed. Please re-login." };
+        } catch (err) {
+            logger(`[SERVICE] importDbSnapshot error: ${err}`, "red");
+            return { ok: false, status: 400, message: String(err?.message || err || "Import failed") };
+        }
+    }
+
 /* =========================User commands to device========================= */
 
     async runChannelMacro(deviceId, channelNumber, user) {

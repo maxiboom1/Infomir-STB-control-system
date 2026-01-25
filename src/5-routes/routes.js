@@ -35,6 +35,30 @@ router.put("/channels-map", requireAuth, requireAdmin, asyncHandler(async (req, 
     return res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
 }));
 
+// ==========================
+// Admin: DB Export / Import
+// ==========================
+
+router.get("/db-export", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+    const result = await appService.exportDbSnapshot();
+    if (!result.ok) {
+        return res.status(result.status || 500).json(result);
+    }
+
+    const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const filename = `mag_control_export_${ts}.json`;
+
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
+    return res.status(200).send(JSON.stringify(result.snapshot, null, 2));
+}));
+
+router.post("/db-import", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+    const { snapshot, keepAdmin } = req.body || {};
+    const result = await appService.importDbSnapshot(snapshot, { keepAdmin: !!keepAdmin });
+    return res.status(result?.ok ? 200 : (result?.status || 500)).json(result);
+}));
+
 router.get("/get-devices", requireAuth, asyncHandler(async (req, res) => {
     const devices = await appService.getAllStb();
     res.json({ ok: true, devices });

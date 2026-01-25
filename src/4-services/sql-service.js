@@ -483,6 +483,184 @@ class SqlService {
     const result = await db.execute(sqlQuery, { channel_number: channelNumber, name });
     return result?.recordset?.[0]?.affected ?? 0;
   }
+
+  /* =========================DB EXPORT / IMPORT========================= */
+
+  async getAdminUserFull() {
+    const sqlQuery = `
+      SELECT TOP (1)
+        id, username, password, role, label, tag
+      FROM dbo.[users]
+      WHERE role = 'admin'
+      ORDER BY id;
+    `;
+    const result = await db.execute(sqlQuery);
+    return result?.recordset?.[0] || null;
+  }
+
+  async getDbSnapshot() {
+    const categories = (await db.execute(`SELECT id, name FROM dbo.[categories] ORDER BY id;`))?.recordset || [];
+    const zones = (await db.execute(`SELECT id, name, category_id FROM dbo.[zones] ORDER BY id;`))?.recordset || [];
+    const devices = (await db.execute(`SELECT id, name, ip, zone_id, pos_index, isOnline, tag, label FROM dbo.[devices] ORDER BY id;`))?.recordset || [];
+    const channels_map = (await db.execute(`SELECT channel_number, name FROM dbo.[channels_map] ORDER BY channel_number;`))?.recordset || [];
+    const users = (await db.execute(`SELECT id, username, password, role, label, tag FROM dbo.[users] ORDER BY id;`))?.recordset || [];
+    const user_zones = (await db.execute(`SELECT user_id, zone_id FROM dbo.[user_zones] ORDER BY user_id, zone_id;`))?.recordset || [];
+
+    return { categories, zones, devices, channels_map, users, user_zones };
+  }
+
+  async importDbSnapshot(snapshot, { keepAdmin } = {}) {
+    // Snapshot fields expected: categories, zones, devices, channels_map, users, user_zones
+    const cats = Array.isArray(snapshot?.categories) ? snapshot.categories : [];
+    const zones = Array.isArray(snapshot?.zones) ? snapshot.zones : [];
+    const devices = Array.isArray(snapshot?.devices) ? snapshot.devices : [];
+    const channels = Array.isArray(snapshot?.channels_map) ? snapshot.channels_map : [];
+    const users = Array.isArray(snapshot?.users) ? snapshot.users : [];
+    const userZones = Array.isArray(snapshot?.user_zones) ? snapshot.user_zones : [];
+
+    // Lightweight validations (DB constraints will do the heavy lifting)
+    for (const d of devices) {
+      const pi = d?.pos_index;
+      if (pi !== null && pi !== undefined) {
+        const n = Number(pi);
+        if (!Number.isInteger(n) || n < 0 || n > 11) {
+          throw new Error(`Invalid pos_index in devices: ${pi}`);
+        }
+      }
+    }
+    for (const ch of channels) {
+      const cn = Number(ch?.channel_number);
+      if (!Number.isInteger(cn) || cn < 1 || cn > 64) {
+        throw new Error(`Invalid channel_number in channels_map: ${ch?.channel_number}`);
+      }
+    }
+
+    // Preserve current admin credentials if requested
+    let preservedAdmin = null;
+    if (keepAdmin) {
+      preservedAdmin = await this.getAdminUserFull();
+    }
+
+    return db.withTransaction(async (tx) => {
+      // Wipe
+      // Single ordered batch to avoid FK conflicts
+      await tx.execute(`
+        DELETE FROM dbo.[user_zones];
+        DELETE FROM dbo.[devices];
+        DELETE FROM dbo.[zones];
+        DELETE FROM dbo.[categories];
+        DELETE FROM dbo.[channels_map];
+        DELETE FROM dbo.[users];
+      `);
+
+      // Restore (keep IDs using IDENTITY_INSERT)
+      // Categories
+      for (const c of cats) {
+        await tx.execute(
+          `
+          SET IDENTITY_INSERT dbo.[categories] ON;
+          INSERT INTO dbo.[categories] (id, name) VALUES (@id, @name);
+          SET IDENTITY_INSERT dbo.[categories] OFF;
+          `,
+          { id: Number(c.id), name: String(c.name ?? "") }
+        );
+      }
+      await tx.execute(`DBCC CHECKIDENT ('dbo.categories', RESEED);`);
+
+      // Zones
+      for (const z of zones) {
+        await tx.execute(
+          `
+          SET IDENTITY_INSERT dbo.[zones] ON;
+          INSERT INTO dbo.[zones] (id, name, category_id) VALUES (@id, @name, @category_id);
+          SET IDENTITY_INSERT dbo.[zones] OFF;
+          `,
+          { id: Number(z.id), name: String(z.name ?? ""), category_id: Number(z.category_id) }
+        );
+      }
+      await tx.execute(`DBCC CHECKIDENT ('dbo.zones', RESEED);`);
+
+      // Devices
+      for (const d of devices) {
+        await tx.execute(
+          `
+          SET IDENTITY_INSERT dbo.[devices] ON;
+          INSERT INTO dbo.[devices]
+            (id, name, ip, zone_id, pos_index, isOnline, tag, label)
+          VALUES
+            (@id, @name, @ip, @zone_id, @pos_index, @isOnline, @tag, @label);
+          SET IDENTITY_INSERT dbo.[devices] OFF;
+          `,
+          {
+            id: Number(d.id),
+            name: String(d.name ?? ""),
+            ip: String(d.ip ?? ""),
+            zone_id: Number(d.zone_id),
+            pos_index: (d.pos_index === null || d.pos_index === undefined) ? null : Number(d.pos_index),
+            isOnline: d.isOnline ? 1 : 0,
+            tag: String(d.tag ?? ""),
+            label: String(d.label ?? ""),
+          }
+        );
+      }
+      await tx.execute(`DBCC CHECKIDENT ('dbo.devices', RESEED);`);
+
+      // Channels map
+      for (const ch of channels) {
+        await tx.execute(
+          `INSERT INTO dbo.[channels_map] (channel_number, name) VALUES (@channel_number, @name);`,
+          { channel_number: Number(ch.channel_number), name: String(ch.name ?? "") }
+        );
+      }
+
+      // Users
+      for (const u of users) {
+        await tx.execute(
+          `
+          SET IDENTITY_INSERT dbo.[users] ON;
+          INSERT INTO dbo.[users]
+            (id, username, password, role, label, tag)
+          VALUES
+            (@id, @username, @password, @role, @label, @tag);
+          SET IDENTITY_INSERT dbo.[users] OFF;
+          `,
+          {
+            id: Number(u.id),
+            username: String(u.username ?? ""),
+            password: String(u.password ?? ""),
+            role: String(u.role ?? "operator"),
+            label: u.label ?? null,
+            tag: u.tag ?? null,
+          }
+        );
+      }
+      await tx.execute(`DBCC CHECKIDENT ('dbo.users', RESEED);`);
+
+      // User zones
+      for (const uz of userZones) {
+        await tx.execute(
+          `INSERT INTO dbo.[user_zones] (user_id, zone_id) VALUES (@user_id, @zone_id);`,
+          { user_id: Number(uz.user_id), zone_id: Number(uz.zone_id) }
+        );
+      }
+
+      // Keep current admin credentials (username/password) to avoid lockout
+      if (keepAdmin && preservedAdmin) {
+        await tx.execute(
+          `
+          UPDATE dbo.[users]
+          SET username = @username, password = @password
+          WHERE id = (
+            SELECT TOP (1) id FROM dbo.[users] WHERE role='admin' ORDER BY id
+          );
+          `,
+          { username: preservedAdmin.username, password: preservedAdmin.password }
+        );
+      }
+
+      return { ok: true };
+    });
+  }
 }
 
 export default new SqlService();

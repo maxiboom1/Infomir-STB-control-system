@@ -1,5 +1,12 @@
 # STB Zones Control Dashboard
 
+**Current version:** v1.3.1
+
+### Latest changes (v1.3.1)
+- Admin: added "Backup / Restore" tab.
+- Export: download full DB snapshot to JSON (including users, zones, devices, channels map, assignments).
+- Import: upload a snapshot JSON and overwrite the DB (optionally keep current admin credentials; import forces re-login).
+
 ### 1) Project Purpose
 **Problem description:** 
 
@@ -108,6 +115,11 @@ Logs will be written to:
 ---
 
 ## Change log
+
+### v1.3.1 - 2026-01-25
+- Admin: added "Backup / Restore" tab.
+- Export: download full DB snapshot to JSON (includes users, zones, devices with grid positions, channels map, and user-zone assignments).
+- Import: upload a snapshot JSON and overwrite the DB (optional "Keep current admin" preserves current admin credentials; import forces re-login).
 
 ### v1.2.2 - 2026-01-19
 - Minor style changes in macro view on frontend.

@@ -1,3 +1,15 @@
+Version: v1.3.1
+Date: 2026-01-25
+Done:
+- Admin UI: added "Backup / Restore" tab.
+- Export: download full DB snapshot to a JSON file (includes users, zones, devices with grid positions, channels map, and user-zone assignments).
+- Import: upload a JSON snapshot and overwrite the DB.
+- Option: "Keep current admin" preserves current admin credentials (username/password) after the import.
+Notes:
+- Import forces re-login (JWT uid may change after restore).
+- DB schema unchanged.
+----------------------------------------
+
 Version: v1.2.1
 Date: 2026-01-19
 Done:

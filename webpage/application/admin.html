@@ -24,6 +24,7 @@
         <button class="nav-tab" data-tab="devices">Devices</button>
         <button class="nav-tab" data-tab="channels">Channels map</button>
         <button class="nav-tab" data-tab="users">Users</button>
+        <button class="nav-tab" data-tab="backup">Backup / Restore</button>
       </nav>
 
       <div class="nav-bottom">
@@ -149,6 +150,62 @@
       </section>
 
       <!-- =========================
+           TAB: BACKUP / RESTORE
+           ========================= -->
+      <section class="tab-panel" data-panel="backup" style="display:none;">
+        <div class="page-header">
+          <h1>Backup / Restore</h1>
+          <div class="page-hint">Export the full DB snapshot to a JSON file, or import a snapshot (overwrites all data).</div>
+        </div>
+
+        <div class="split-2">
+
+          <!-- Export -->
+          <section class="pane">
+            <div class="pane-head">
+              <div class="pane-title">Export</div>
+            </div>
+            <div class="section-body" style="padding:14px;">
+              <div class="hint">Downloads a full system snapshot including users, zones, devices, channels map and assignments.</div>
+              <div class="actions" style="margin-top:10px;">
+                <button id="btn-db-export" class="btn">Export to JSON</button>
+                <div id="db-export-note" class="hint"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Import -->
+          <section class="pane">
+            <div class="pane-head">
+              <div class="pane-title">Import</div>
+            </div>
+            <div class="section-body" style="padding:14px;">
+              <div class="hint"><b>Warning:</b> Import will overwrite ALL data (users, zones, devices, channels map, assignments).</div>
+
+              <div class="form-row" style="margin-top:12px;">
+                <label class="label" for="db-import-file">Snapshot file (.json)</label>
+                <input id="db-import-file" class="input" type="file" accept="application/json,.json" />
+              </div>
+
+              <div class="form-row">
+                <label class="label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                  <input id="db-keep-admin" type="checkbox" checked />
+                  Keep current admin credentials (recommended)
+                </label>
+              </div>
+
+              <div id="db-import-summary" class="hint"></div>
+
+              <div class="actions" style="margin-top:10px;">
+                <button id="btn-db-import" class="btn danger">Import snapshot</button>
+                <div id="db-import-note" class="hint"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- =========================
            TAB: CHANNELS MAP
            ========================= -->
       <section class="tab-panel" data-panel="channels" style="display:none;">
@@ -190,7 +247,6 @@
         </div>
       </section>
 
-      
       <!-- =========================
            TAB: CATEGORIES & ZONES
            ========================= -->

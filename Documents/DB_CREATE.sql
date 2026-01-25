@@ -1,154 +1,152 @@
-﻿/* =========================================================
-   MAG-Control DB — MSSQL Create Script (DEV friendly)
-   Version: v1.2.1 (UI hotfix; no schema changes vs v1.2.0)
-   Tables:
-     - categories
-     - zones
-     - users
-     - user_zones
-     - devices
-     - channels_map
+/* =========================================================
+   MAG-Control DB — MSSQL Create Script (v1.3.0)
 
    Notes:
-     - DEV script: drops & recreates DB
-     - Category is assigned ONLY to zones.
-     - Devices belong ONLY to zones.
+   - Intended for DEV reset (DROP/CREATE is OK).
+   - Seeds channels_map with 1..64 if empty.
    ========================================================= */
 
--- Drop DB (DEV)
-IF DB_ID(N'mag_control') IS NOT NULL
+-- 1) Create DB (if not exists)
+IF DB_ID(N'mag_control') IS NULL
 BEGIN
-  ALTER DATABASE mag_control SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-  DROP DATABASE mag_control;
+  CREATE DATABASE [mag_control];
 END
 GO
 
--- Create DB
-CREATE DATABASE mag_control;
-GO
-
-USE mag_control;
+USE [mag_control];
 GO
 
 /* =======================
-   Create tables
+   2) Drop tables (safe dev reset)
    ======================= */
 
--- categories
-CREATE TABLE dbo.categories (
-  id    INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_categories PRIMARY KEY,
-  name  NVARCHAR(64)       NOT NULL,
-  label NVARCHAR(128)      NULL,
-  tag   NVARCHAR(64)       NULL,
+IF OBJECT_ID(N'dbo.[user_zones]', N'U') IS NOT NULL DROP TABLE dbo.[user_zones];
+IF OBJECT_ID(N'dbo.[devices]', N'U') IS NOT NULL DROP TABLE dbo.[devices];
+IF OBJECT_ID(N'dbo.[zones]', N'U') IS NOT NULL DROP TABLE dbo.[zones];
+IF OBJECT_ID(N'dbo.[categories]', N'U') IS NOT NULL DROP TABLE dbo.[categories];
+IF OBJECT_ID(N'dbo.[channels_map]', N'U') IS NOT NULL DROP TABLE dbo.[channels_map];
+IF OBJECT_ID(N'dbo.[users]', N'U') IS NOT NULL DROP TABLE dbo.[users];
+GO
 
-  CONSTRAINT UQ_categories_name UNIQUE (name)
+/* =======================
+   3) Create tables
+   ======================= */
+
+-- Categories
+CREATE TABLE dbo.[categories] (
+  [id]   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_categories PRIMARY KEY,
+  [name] NVARCHAR(64) NOT NULL
 );
 GO
 
--- zones (zone belongs to category)
-CREATE TABLE dbo.zones (
-  id          INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_zones PRIMARY KEY,
-  name        NVARCHAR(64)       NOT NULL,
-  category_id INT                NOT NULL,
-  layout      NVARCHAR(MAX)      NULL,
-  label       NVARCHAR(128)      NULL,
-  tag         NVARCHAR(64)       NULL,
-
-  CONSTRAINT UQ_zones_name UNIQUE (name),
-  CONSTRAINT FK_zones_category FOREIGN KEY (category_id)
-    REFERENCES dbo.categories(id)
+-- Zones
+CREATE TABLE dbo.[zones] (
+  [id]          INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_zones PRIMARY KEY,
+  [name]        NVARCHAR(64) NOT NULL,
+  [category_id] INT NOT NULL
 );
 GO
 
--- users
-CREATE TABLE dbo.users (
-  id       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_users PRIMARY KEY,
-  username NVARCHAR(64)       NOT NULL,
-  password NVARCHAR(255)      NOT NULL,   -- store HASH (bcrypt)
-  role     NVARCHAR(32)       NOT NULL CONSTRAINT DF_users_role DEFAULT N'operator',
-  label    NVARCHAR(128)      NULL,
-  tag      NVARCHAR(64)       NULL,
+ALTER TABLE dbo.[zones]
+  ADD CONSTRAINT FK_zones_category
+  FOREIGN KEY ([category_id]) REFERENCES dbo.[categories]([id])
+  ON DELETE NO ACTION ON UPDATE NO ACTION;
+GO
 
-  CONSTRAINT UQ_users_username UNIQUE (username)
+-- Devices
+CREATE TABLE dbo.[devices] (
+  [id]        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_devices PRIMARY KEY,
+  [name]      NVARCHAR(64) NOT NULL,
+  [ip]        NVARCHAR(64) NOT NULL,
+  [zone_id]   INT NOT NULL,
+  [pos_index] INT NULL,
+  [isOnline]  BIT NOT NULL CONSTRAINT DF_devices_isOnline DEFAULT(0),
+  [tag]       NVARCHAR(64) NULL,
+  [label]     NVARCHAR(64) NULL
 );
 GO
 
--- user_zones (user ↔ zone mapping)
-CREATE TABLE dbo.user_zones (
-  id      INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_user_zones PRIMARY KEY,
-  user_id INT                NOT NULL,
-  zone_id INT                NOT NULL,
-  label   NVARCHAR(128)      NULL,
-  tag     NVARCHAR(64)       NULL,
-
-  CONSTRAINT UQ_user_zones_user_zone UNIQUE (user_id, zone_id),
-  CONSTRAINT FK_user_zones_user FOREIGN KEY (user_id)
-    REFERENCES dbo.users(id),
-  CONSTRAINT FK_user_zones_zone FOREIGN KEY (zone_id)
-    REFERENCES dbo.zones(id)
-);
+ALTER TABLE dbo.[devices]
+  ADD CONSTRAINT FK_devices_zone
+  FOREIGN KEY ([zone_id]) REFERENCES dbo.[zones]([id])
+  ON DELETE NO ACTION ON UPDATE NO ACTION;
 GO
 
--- devices (device belongs only to zone; category derived via zone.category_id)
-CREATE TABLE dbo.devices (
-  id          INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_devices PRIMARY KEY,
-  name        NVARCHAR(64)       NOT NULL,
-  ip          VARCHAR(45)        NOT NULL,
-  zone_id     INT                NOT NULL,
-  pos_index   INT                NULL,   -- 0..11 (6x2 grid). NULL = unplaced (treated as disabled)
-  isOnline    BIT                NOT NULL CONSTRAINT DF_devices_isOnline DEFAULT (0),
-  tag         NVARCHAR(64)       NULL,
-  label       NVARCHAR(128)      NULL,
-
-  CONSTRAINT UQ_devices_name UNIQUE (name),
-  CONSTRAINT UQ_devices_ip   UNIQUE (ip),
-
-  CONSTRAINT CK_devices_pos_index_range CHECK (pos_index IS NULL OR (pos_index >= 0 AND pos_index <= 11)),
-
-  CONSTRAINT FK_devices_zone FOREIGN KEY (zone_id)
-    REFERENCES dbo.zones(id)
-);
+-- pos_index 0..11 when not null
+ALTER TABLE dbo.[devices]
+  ADD CONSTRAINT CK_devices_pos_index
+  CHECK ([pos_index] IS NULL OR ([pos_index] >= 0 AND [pos_index] <= 11));
 GO
 
--- Enforce single device per cell per zone (only when pos_index is set)
+-- Unique position per zone (only when pos_index is NOT NULL)
 CREATE UNIQUE INDEX UX_devices_zone_pos
-  ON dbo.devices(zone_id, pos_index)
-  WHERE pos_index IS NOT NULL;
+ON dbo.[devices]([zone_id], [pos_index])
+WHERE [pos_index] IS NOT NULL;
 GO
 
--- channels_map (admin-configured channel names for macros 1..64)
-CREATE TABLE dbo.channels_map (
-  id             INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_channels_map PRIMARY KEY,
-  channel_number INT                NOT NULL,
-  name           NVARCHAR(64)       NOT NULL CONSTRAINT DF_channels_map_name DEFAULT N''
+-- Users
+CREATE TABLE dbo.[users] (
+  [id]       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_users PRIMARY KEY,
+  [username] NVARCHAR(64) NOT NULL,
+  [password] NVARCHAR(256) NOT NULL,
+  [role]     NVARCHAR(16) NOT NULL,
+  [label]    NVARCHAR(64) NULL,
+  [tag]      NVARCHAR(64) NULL
 );
 GO
 
--- Only 1..64 allowed and unique
-ALTER TABLE dbo.channels_map
-  ADD CONSTRAINT CK_channels_map_range CHECK (channel_number BETWEEN 1 AND 64);
+CREATE UNIQUE INDEX UX_users_username
+ON dbo.[users]([username]);
 GO
 
-CREATE UNIQUE INDEX UX_channels_map_number ON dbo.channels_map(channel_number);
+-- User ↔ Zones mapping
+CREATE TABLE dbo.[user_zones] (
+  [user_id] INT NOT NULL,
+  [zone_id] INT NOT NULL,
+  CONSTRAINT PK_user_zones PRIMARY KEY ([user_id], [zone_id])
+);
 GO
 
--- Seed rows 1..64
-;WITH n AS (
-  SELECT TOP (64) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS i
-  FROM sys.all_objects
-)
-INSERT INTO dbo.channels_map(channel_number, name)
-SELECT i, N'' FROM n
-ORDER BY i;
+ALTER TABLE dbo.[user_zones]
+  ADD CONSTRAINT FK_user_zones_user
+  FOREIGN KEY ([user_id]) REFERENCES dbo.[users]([id])
+  ON DELETE NO ACTION ON UPDATE NO ACTION;
+GO
+
+ALTER TABLE dbo.[user_zones]
+  ADD CONSTRAINT FK_user_zones_zone
+  FOREIGN KEY ([zone_id]) REFERENCES dbo.[zones]([id])
+  ON DELETE NO ACTION ON UPDATE NO ACTION;
+GO
+
+-- Channels map
+CREATE TABLE dbo.[channels_map] (
+  [channel_number] INT NOT NULL CONSTRAINT PK_channels_map PRIMARY KEY,
+  [name]           NVARCHAR(64) NULL
+);
+GO
+
+ALTER TABLE dbo.[channels_map]
+  ADD CONSTRAINT CK_channels_map_number
+  CHECK ([channel_number] >= 1 AND [channel_number] <= 64);
 GO
 
 /* =======================
-   Helpful indexes
+   4) Seed data
    ======================= */
-CREATE INDEX IX_zones_category_id     ON dbo.zones(category_id);
-CREATE INDEX IX_devices_zone_id       ON dbo.devices(zone_id);
-CREATE INDEX IX_devices_zone_pos      ON dbo.devices(zone_id, pos_index);
-CREATE INDEX IX_user_zones_user_id    ON dbo.user_zones(user_id);
-CREATE INDEX IX_user_zones_zone_id    ON dbo.user_zones(zone_id);
-CREATE INDEX IX_channels_map_number   ON dbo.channels_map(channel_number);
+
+-- Seed channels 1..64 if empty
+IF NOT EXISTS (SELECT 1 FROM dbo.[channels_map])
+BEGIN
+  DECLARE @i INT = 1;
+  WHILE @i <= 64
+  BEGIN
+    INSERT INTO dbo.[channels_map] (channel_number, name) VALUES (@i, NULL);
+    SET @i = @i + 1;
+  END
+END
 GO
+
+/* =========================================================
+   End of script
+   ========================================================= */
