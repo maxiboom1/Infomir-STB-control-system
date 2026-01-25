@@ -147,6 +147,10 @@ BEGIN
 END
 GO
 
+-- Seed initial admin
+INSERT INTO dbo.[users] (username, [password], [role])
+VALUES (N'admin', N'admin', N'admin');
+GO
 /* =========================================================
    End of script
    ========================================================= */
