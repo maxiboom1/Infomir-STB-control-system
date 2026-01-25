@@ -92,6 +92,7 @@ Edit it and restart.
 ```bash
 npm install
 npm run build:exe
+```
 
 ### Run
 1) Put these in the same folder:
@@ -108,7 +109,9 @@ Logs will be written to:
 
 ## Change log
 
-## Changelog
+### v1.2.2 - 2026-01-19
+- Minor style changes in macro view on frontend.
+
 
 ### v1.2.1 - 2026-01-19
 - Operator UI: Channels list now uses the same width as the keypad, and Channels/Keypad toggling properly hides the other panel.

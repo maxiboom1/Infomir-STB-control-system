@@ -19,8 +19,8 @@ export function createConfigTemplate() {
 
     // Macros (Channel list)
     // Delay between digits and before OK/ENTER
-    macroDigitDelayMs: 150,
-    macroEnterDelayMs: 250,
+    macroDigitDelayMs: 700,
+    macroEnterDelayMs: 800,
   };
 }
 
